@@ -23,18 +23,22 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="随堂笔记">
-<meta property="og:type" content="website">
-<meta property="og:title" content="浅秋之枫">
-<meta property="og:url" content="https://qianqiuzhifeng.github.io/tags/doc/index.html">
+<meta name="description" content="安装1234567891011# 下载wget -c &quot;https:&#x2F;&#x2F;storage.googleapis.com&#x2F;kubernetes-release&#x2F;release&#x2F;$(curl -s https:&#x2F;&#x2F;storage.googleapis.com&#x2F;kubernetes-release&#x2F;release&#x2F;stable.txt)&#x2F;bin&#x2F;linux&#x2F;amd64&#x2F;kubectl&quot;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-kubectl">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/08/k8s-tools-kubectl-knowledge/index.html">
 <meta property="og:site_name" content="浅秋之枫">
-<meta property="og:description" content="随堂笔记">
+<meta property="og:description" content="安装1234567891011# 下载wget -c &quot;https:&#x2F;&#x2F;storage.googleapis.com&#x2F;kubernetes-release&#x2F;release&#x2F;$(curl -s https:&#x2F;&#x2F;storage.googleapis.com&#x2F;kubernetes-release&#x2F;release&#x2F;stable.txt)&#x2F;bin&#x2F;linux&#x2F;amd64&#x2F;kubectl&quot;">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-08T01:33:14.000Z">
+<meta property="article:modified_time" content="2020-12-08T02:11:16.282Z">
 <meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="tool">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://qianqiuzhifeng.github.io/tags/doc/">
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/08/k8s-tools-kubectl-knowledge/">
 
 
 <script class="page-configurations">
@@ -42,11 +46,11 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
-<title>标签: doc | 浅秋之枫</title>
+<title>k8s-kubectl | 浅秋之枫</title>
   
 
 
@@ -131,7 +135,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -144,6 +148,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">1.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">语法</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -193,110 +198,101 @@
 </noscript>
 
 
-    <div class="main-inner tag posts-collapse">
+    <div class="main-inner post posts-expand">
 
 
   
-  
-  
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        <h2 class="collection-header">doc
-          <small>标签</small>
-        </h2>
-      </div>
 
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/08/k8s-tools-kubectl-knowledge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-kubectl
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
       
-    <div class="collection-year">
-      <span class="collection-header">2020</span>
+
+      <time title="创建时间：2020-12-08 09:33:14 / 修改时间：10:11:16" itemprop="dateCreated datePublished" datetime="2020-12-08T09:33:14+08:00">2020-12-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 下载</span></span><br><span class="line">wget -c &quot;https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl&quot;</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 赋予可执行</span></span><br><span class="line">chmod +x ./kubectl</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 移动到指令目录</span></span><br><span class="line">sudo mv ./kubectl /usr/local/bin/kubectl</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 测试</span></span><br><span class="line">kubectl version --client</span><br></pre></td></tr></table></figure>
+
+<h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2>
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-04T13:22:27+08:00"
-              content="2020-12-04">
-          12-04
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/04/python-tutorial-knowledge-four/" itemprop="url">
-            <span itemprop="name">数据类型</span>
-          </a>
-      </div>
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/tool/" rel="tag"># tool</a>
+          </div>
 
-      
-    </header>
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/07/k8s-component-knowledge/" rel="prev" title="k8s-组件">
+                  <i class="fa fa-chevron-left"></i> k8s-组件
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/08/k8s-tools-kind-knowledge/" rel="next" title="k8s-kind">
+                  k8s-kind <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
   </article>
+</div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-04T10:42:50+08:00"
-              content="2020-12-04">
-          12-04
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/04/python-tutorial-knowledge-three/" itemprop="url">
-            <span itemprop="name">迭代器和生成器</span>
-          </a>
-      </div>
 
-      
-    </header>
-  </article>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-03T20:53:54+08:00"
-              content="2020-12-03">
-          12-03
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/03/python-tutorial-knowledge-two/" itemprop="url">
-            <span itemprop="name">命名空间和作用域</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-03T10:16:58+08:00"
-              content="2020-12-03">
-          12-03
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/03/python-tutorial-knowledge-one/" itemprop="url">
-            <span itemprop="name">函数</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-    </div>
-  </div>
-  
-  
-  
 
 
 <script>

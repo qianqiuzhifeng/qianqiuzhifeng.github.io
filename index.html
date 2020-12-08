@@ -156,7 +156,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">9</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -165,7 +165,7 @@
         <span class="site-state-item-name">分类</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -203,6 +203,159 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/08/k8s-tools-kind-knowledge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/08/k8s-tools-kind-knowledge/" class="post-title-link" itemprop="url">k8s-kind</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-08 10:10:38 / 修改时间：13:26:51" itemprop="dateCreated datePublished" datetime="2020-12-08T10:10:38+08:00">2020-12-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          
+
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 下载</span></span><br><span class="line">wget -O kind -c https://kind.sigs.k8s.io/dl/v0.9.0/kind-linux-amd64</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 赋予可执行</span></span><br><span class="line">chmod +x ./kind</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 移动到指令目录</span></span><br><span class="line">mv ./kind /usr/local/bin/kind</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 测试</span></span><br><span class="line">kind -h</span><br></pre></td></tr></table></figure>
+
+<h2 id="指令"><a href="#指令" class="headerlink" title="指令"></a>指令</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 创建集群</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建集群后，会自动生成~/.kube/config文件</span></span><br><span class="line">kind create cluster</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看创建集群帮助文档</span></span><br><span class="line">kind create cluster --help</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查询集群</span></span><br><span class="line">kind get clusters</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除集群</span></span><br><span class="line">kind delete cluster [--name xxx]</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 加载镜像</span></span><br><span class="line">kind load docker-image my-custom-image --name kind</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看集群节点镜像</span></span><br><span class="line">docker exec -it my-node-name crictl images</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/08/k8s-tools-kubectl-knowledge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/08/k8s-tools-kubectl-knowledge/" class="post-title-link" itemprop="url">k8s-kubectl</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-08 09:33:14 / 修改时间：10:11:16" itemprop="dateCreated datePublished" datetime="2020-12-08T09:33:14+08:00">2020-12-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 下载</span></span><br><span class="line">wget -c &quot;https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl&quot;</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 赋予可执行</span></span><br><span class="line">chmod +x ./kubectl</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 移动到指令目录</span></span><br><span class="line">sudo mv ./kubectl /usr/local/bin/kubectl</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 测试</span></span><br><span class="line">kubectl version --client</span><br></pre></td></tr></table></figure>
+
+<h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/07/k8s-component-knowledge/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -228,7 +381,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2020-12-07 16:06:00 / 修改时间：17:56:07" itemprop="dateCreated datePublished" datetime="2020-12-07T16:06:00+08:00">2020-12-07</time>
+      <time title="创建时间：2020-12-07 16:06:00 / 修改时间：21:26:11" itemprop="dateCreated datePublished" datetime="2020-12-07T16:06:00+08:00">2020-12-07</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -257,8 +410,8 @@
 <p>控制层组件可以在集群上的任意一台机器上运行。然而，通常情况下，将所有控制层组件部署在同一台机器上，但是这台机器不运行用户容器。</p>
 <h4 id="kube-apiserver"><a href="#kube-apiserver" class="headerlink" title="kube-apiserver"></a>kube-apiserver</h4><p>API server 是 k8s 控制层暴露 k8s API 的组件。API server 是 k8s 控制层的前端。</p>
 <p>k8s API 的主要实现是 kube-apiserver。kube-apiserver 被设计成横向扩展，就是，通过部署更多实例进行扩展。你可以通过运行几个 kube-apiserver 实例，以实现实例间的负载均衡。</p>
-<h4 id="etcd"><a href="#etcd" class="headerlink" title="etcd"></a>etcd</h4><p>作为 k8s 后台存储集群数据的一致性、高可用键值对数据库。</p>
-<p>如果 k8s 集群采用 etcd 作为后台存储，以确保对这些数据进行备份。</p>
+<h4 id="etcd"><a href="#etcd" class="headerlink" title="etcd"></a>etcd</h4><p>作为 k8s 备份存储集群数据的一致性、高可用键值对数据库。</p>
+<p>如果 k8s 集群采用 etcd 作为备份存储，请确保您有一个备份这些数据的计划。</p>
 <h4 id="kube-scheduler"><a href="#kube-scheduler" class="headerlink" title="kube-scheduler"></a>kube-scheduler</h4><p>控制层组件为新的容器查找未分配的节点，并且从中选择一个节点运行容器。</p>
 <p>考虑调度决策的因素包括：个人和组织的资源申请，硬件、软件和政策约束，亲和力和抗亲和力规范，数据本地化，网络负载干扰和最后期限等。</p>
 <h4 id="kube-controller-manager"><a href="#kube-controller-manager" class="headerlink" title="kube-controller-manager"></a>kube-controller-manager</h4><p>运行控制器进程的控制层组件。</p>
@@ -268,8 +421,31 @@
 <li>节点控制器（node controller）：负责发现和响应节点宕机</li>
 <li>副本控制器（replication controller）：负责为系统中的每个复制控制器对象维护正确的 pods 数量</li>
 <li>端点控制器（Endpoint controller）：填充端点对象(即连接 Services 和 Pods)</li>
-<li>服务帐户和令牌控制器（Service Account &amp; Token controllers）：为新的命名空间创建默认帐户和API访问令牌</li>
+<li>服务帐户和令牌控制器（Service Account &amp; Token controllers）：为新的命名空间创建默认帐户和 API 访问令牌</li>
 </ul>
+<h4 id="cloud-controller-manager"><a href="#cloud-controller-manager" class="headerlink" title="cloud-controller-manager"></a>cloud-controller-manager</h4><p>一个嵌入特定云控制逻辑的 k8s 控制层组件。云控制器管理器允许您将集群链接到云提供商的 API 中，并将与云平台交互的组件和仅与集群交互的组件分离开来。</p>
+<p>云控制器-管理器只运行特定云提供商的控制器。如果在自己的服务器上运行 k8s，或者在自己的 PC 内的学习环境中运行，那么集群没有云控制器管理器。</p>
+<p>与 kube-controller-manager 一样，cloud-controller-manager 将几个逻辑上独立的控制器整合到单个二进制文件中，可以将其作为单个进程运行。可以水平扩展(运行多个副本)以提高性能或帮助容忍失败。</p>
+<p>以下控制器可以具有云提供商依赖关系：</p>
+<ul>
+<li>节点控制器（node controller）：用于检查云提供商，以确定一个节点在停止响应后是否已在云中删除</li>
+<li>路由控制器（Route controller）：用于在底层云基础设施中设置路由</li>
+<li>服务控制器（Service controller）：用于创建、更新和删除云提供商负载平衡器</li>
+</ul>
+<h3 id="节点组件"><a href="#节点组件" class="headerlink" title="节点组件"></a>节点组件</h3><p>节点组件在每个节点上运行，负责维护和提供 k8s 运行环境。</p>
+<h4 id="kubelet"><a href="#kubelet" class="headerlink" title="kubelet"></a>kubelet</h4><p>一个运行在集群每个节点上的代理。它确保容器在 Pod 中运行。</p>
+<p>kubelet 采用了一组通过各种机制提供的 PodSpecs，并确保这些 PodSpecs 中描述的容器运行正常。kubelet 不管理不是由 k8s 创建的容器。</p>
+<h4 id="kube-proxy"><a href="#kube-proxy" class="headerlink" title="kube-proxy"></a>kube-proxy</h4><p>kube-proxy 是一个运行在集群每个节点上的网络代理,是实现 k8s Service 概念的一部分。</p>
+<p>kube-proxy 维护节点上的网络规则。这些网络规则允许从集群内部或外部的网络会话与 Pods 进行网络通信。kube-proxy 使用操作系统包过滤层(如果有并且可用的话），否则，kube-proxy 将自己转发流量。</p>
+<h4 id="Container-runtime"><a href="#Container-runtime" class="headerlink" title="Container runtime"></a>Container runtime</h4><p>Container runtime 是负责运行容器的软件。</p>
+<p>k8s 支持几种 Container runtime：Docker、containerd, CRI-O 和任何 k8s CRI（Container Runtime Interface）实现。</p>
+<h3 id="Addons"><a href="#Addons" class="headerlink" title="Addons"></a>Addons</h3><p>插件使用k8s资源(守护进程、部署等)来实现集群特性。因为它们提供了集群级别的特性，所以插件的名称空间资源属于kube-system名称空间。</p>
+<h4 id="DNS"><a href="#DNS" class="headerlink" title="DNS"></a>DNS</h4><p>虽然其他插件不是严格要求的，但所有k8s集群都应该有集群DNS，因为许多示例依赖于它。</p>
+<p>集群DNS是您环境中的其他DNS服务器之外的一个DNS服务器，它为k8s service提供DNS记录。</p>
+<p>由k8s启动的容器在其DNS搜索中自动包含此DNS服务器。</p>
+<h4 id="Web-UI-Dashboard"><a href="#Web-UI-Dashboard" class="headerlink" title="Web UI (Dashboard)"></a>Web UI (Dashboard)</h4><p>仪表板是一种用于k8s集群的通用的、基于web的UI。它允许用户管理并排除集群中运行的应用程序以及集群本身的故障。</p>
+<h4 id="Container-Resource-Monitoring"><a href="#Container-Resource-Monitoring" class="headerlink" title="Container Resource Monitoring"></a>Container Resource Monitoring</h4><p>Container Resource Monitoring在一个中央数据库中记录关于容器的一般时间序列指标，并提供一个用于浏览该数据的UI。</p>
+<h4 id="Cluster-level-Logging"><a href="#Cluster-level-Logging" class="headerlink" title="Cluster-level Logging"></a>Cluster-level Logging</h4><p>集群级日志记录机制负责将容器日志保存到具有搜索/浏览界面的中央日志存储区。</p>
 
       
     </div>
