@@ -23,22 +23,22 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="对象对象 是 Python 中对数据的抽象。 Python 程序中的所有数据都是由对象或对象间关系来表示的。 （从某种意义上说，按照冯·诺依曼的“存储程序计算机”模型，代码本身也是由对象来表示的。） 每个对象都有各自的编号、类型和值。一个对象被创建后，它的 编号 就绝不会改变；你可以将其理解为该对象在内存中的地址。 ‘is’ 运算符可以比较两个对象的编号是否相同；id() 函数能返回一个代表其编号">
+<meta name="description" content="集群中的每个对象都有一个针对该类型资源的惟一名称。每个 k8s 对象还有一个在整个集群中唯一的 UID。 例如，在同一个名称空间中只能有一个名为 myapp-1234 的 Pod，但是可以有一个名为 myapp-1234 的 Pod 和一个 Deployment。 对于用户提供的非唯一属性，k8s 提供标签和注释。 Names客户端提供的引用资源 URL 中的对象的字符串，例如：&#x2F;api&#x2F;v1&#x2F;p">
 <meta property="og:type" content="article">
-<meta property="og:title" content="数据类型">
-<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/04/python-tutorial-knowledge-four/index.html">
+<meta property="og:title" content="k8s-对象名称和ID">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-name-and-id/index.html">
 <meta property="og:site_name" content="浅秋之枫">
-<meta property="og:description" content="对象对象 是 Python 中对数据的抽象。 Python 程序中的所有数据都是由对象或对象间关系来表示的。 （从某种意义上说，按照冯·诺依曼的“存储程序计算机”模型，代码本身也是由对象来表示的。） 每个对象都有各自的编号、类型和值。一个对象被创建后，它的 编号 就绝不会改变；你可以将其理解为该对象在内存中的地址。 ‘is’ 运算符可以比较两个对象的编号是否相同；id() 函数能返回一个代表其编号">
+<meta property="og:description" content="集群中的每个对象都有一个针对该类型资源的惟一名称。每个 k8s 对象还有一个在整个集群中唯一的 UID。 例如，在同一个名称空间中只能有一个名为 myapp-1234 的 Pod，但是可以有一个名为 myapp-1234 的 Pod 和一个 Deployment。 对于用户提供的非唯一属性，k8s 提供标签和注释。 Names客户端提供的引用资源 URL 中的对象的字符串，例如：&#x2F;api&#x2F;v1&#x2F;p">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-12-04T05:22:27.000Z">
-<meta property="article:modified_time" content="2020-12-07T08:05:29.621Z">
+<meta property="article:published_time" content="2020-12-10T05:35:11.000Z">
+<meta property="article:modified_time" content="2020-12-10T05:51:47.986Z">
 <meta property="article:author" content="浅秋之枫">
-<meta property="article:tag" content="python">
-<meta property="article:tag" content="doc">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="object">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/04/python-tutorial-knowledge-four/">
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-name-and-id/">
 
 
 <script class="page-configurations">
@@ -50,7 +50,7 @@
     lang   : 'zh-CN'
   };
 </script>
-<title>数据类型 | 浅秋之枫</title>
+<title>k8s-对象名称和ID | 浅秋之枫</title>
   
 
 
@@ -148,7 +148,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.</span> <span class="nav-text">对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E7%BD%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">内置类型</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Names"><span class="nav-number">1.</span> <span class="nav-text">Names</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DNS-Subdomain-Names"><span class="nav-number">1.1.</span> <span class="nav-text">DNS Subdomain Names</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DNS-Label-Names"><span class="nav-number">1.2.</span> <span class="nav-text">DNS Label Names</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Path-Segment-Names"><span class="nav-number">1.3.</span> <span class="nav-text">Path Segment Names</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UIDs"><span class="nav-number">2.</span> <span class="nav-text">UIDs</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -209,7 +209,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/04/python-tutorial-knowledge-four/">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-name-and-id/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -222,7 +222,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          数据类型
+          k8s-对象名称和ID
         </h1>
 
         <div class="post-meta-container">
@@ -232,23 +232,17 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
+      
 
-      <time title="创建时间：2020-12-04 13:22:27" itemprop="dateCreated datePublished" datetime="2020-12-04T13:22:27+08:00">2020-12-04</time>
+      <time title="创建时间：2020-12-10 13:35:11 / 修改时间：13:51:47" itemprop="dateCreated datePublished" datetime="2020-12-10T13:35:11+08:00">2020-12-10</time>
     </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-07 16:05:29" itemprop="dateModified" datetime="2020-12-07T16:05:29+08:00">2020-12-07</time>
-      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
         </span>
     </span>
 
@@ -262,10 +256,32 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h2><p>对象 是 Python 中对数据的抽象。 Python 程序中的所有数据都是由对象或对象间关系来表示的。 （从某种意义上说，按照冯·诺依曼的“存储程序计算机”模型，代码本身也是由对象来表示的。）</p>
-<p>每个对象都有各自的编号、类型和值。一个对象被创建后，它的 编号 就绝不会改变；你可以将其理解为该对象在内存中的地址。 ‘is’ 运算符可以比较两个对象的编号是否相同；id() 函数能返回一个代表其编号的整型数。</p>
-<p>有些对象的<strong>值</strong>可以改变。值可以改变的对象被称为<strong>可变的</strong>；值不可以改变的对象就被称为<strong>不可变的</strong>。(一个不可变容器对象如果包含对可变对象的引用，当后者的值改变时，前者的值也会改变；但是该容器仍属于不可变对象，因为它所包含的对象集是不会改变的。因此，不可变并不严格等同于值不能改变，实际含义要更微妙。) 一个对象的可变性是由其类型决定的；例如，数字、字符串和元组是不可变的，而字典和列表是可变的。</p>
-<h2 id="内置类型"><a href="#内置类型" class="headerlink" title="内置类型"></a>内置类型</h2>
+        <p>集群中的每个对象都有一个针对该类型资源的惟一名称。每个 k8s 对象还有一个在整个集群中唯一的 UID。</p>
+<p>例如，在同一个名称空间中只能有一个名为 myapp-1234 的 Pod，但是可以有一个名为 myapp-1234 的 Pod 和一个 Deployment。</p>
+<p>对于用户提供的非唯一属性，k8s 提供<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">标签</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/">注释</a>。</p>
+<h2 id="Names"><a href="#Names" class="headerlink" title="Names"></a>Names</h2><p>客户端提供的引用资源 URL 中的对象的字符串，例如：/api/v1/pods/some-name。</p>
+<p>一次只能有一个给定类型的对象具有给定名称。但是，如果删除该对象，则可以创建具有相同名称的新对象。</p>
+<p>下面是三种常用的资源名称约束。</p>
+<h3 id="DNS-Subdomain-Names"><a href="#DNS-Subdomain-Names" class="headerlink" title="DNS Subdomain Names"></a>DNS Subdomain Names</h3><p>大多数资源类型需要一个可以作为 RFC 1123 中定义的 DNS 子域名的名称。这意味着名称必须：</p>
+<ul>
+<li>包含不超过 253 个字符</li>
+<li>只包含小写字母数字字符，’-‘或’.’。</li>
+<li>以字母数字字符开始。</li>
+<li>以字母数字字符结束。</li>
+</ul>
+<h3 id="DNS-Label-Names"><a href="#DNS-Label-Names" class="headerlink" title="DNS Label Names"></a>DNS Label Names</h3><p>一些资源类型要求它们的名称遵循 RFC 1123 中定义的 DNS 标签标准。这意味着名称必须：</p>
+<ul>
+<li>最多包含 63 个字符</li>
+<li>只包含小写字母数字字符或“-”</li>
+<li>以字母数字字符开始。</li>
+<li>以字母数字字符结束。</li>
+</ul>
+<h3 id="Path-Segment-Names"><a href="#Path-Segment-Names" class="headerlink" title="Path Segment Names"></a>Path Segment Names</h3><p>些资源类型要求它们的名称能够安全地编码为路径段。换句话说，名字可能不是“.”或“..”，也不能包含“/”和“%”。</p>
+<p><strong>注意</strong>：有些资源类型对它们的名称有额外的限制。</p>
+<h2 id="UIDs"><a href="#UIDs" class="headerlink" title="UIDs"></a>UIDs</h2><p>k8s 系统生成的惟一标识对象的字符串。</p>
+<p>在 k8s 集群的整个生命周期中创建的每个对象都有一个独特的 UID。它的目的是区分历史上发生的类似实体。</p>
+<p>k8s 的 uid 是普遍唯一的标识符(也称为 uuid)。uuid 被标准化为 ISO/IEC 9834-8 和 ITU-T X.667。</p>
+
     </div>
 
     
@@ -274,22 +290,19 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/python/" rel="tag"># python</a>
-              <a href="/tags/doc/" rel="tag"># doc</a>
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/object/" rel="tag"># object</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2020/12/04/python-tutorial-knowledge-three/" rel="prev" title="迭代器和生成器">
-                  <i class="fa fa-chevron-left"></i> 迭代器和生成器
+                <a href="/2020/12/10/k8s-objects-management/" rel="prev" title="k8s-objects-management">
+                  <i class="fa fa-chevron-left"></i> k8s-objects-management
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2020/12/06/python-module-itertools-knowledge/" rel="next" title="内置模块-itertools">
-                  内置模块-itertools <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>

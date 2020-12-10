@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="kubectl 命令行工具支持几种不同的方法来创建和管理 k8s 对象。本文档提供了不同方法的概述。阅读Kubectl book，了解 Kubectl 管理对象的细节。 管理方法注意：k8s 对象应该只使用一种技术进行管理。同一对象的混合和匹配技术会导致未知的行为。    Management technique Operates on Recommended environment Suppor">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-objects-management">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-management/index.html">
+<meta property="og:site_name" content="浅秋之枫">
+<meta property="og:description" content="kubectl 命令行工具支持几种不同的方法来创建和管理 k8s 对象。本文档提供了不同方法的概述。阅读Kubectl book，了解 Kubectl 管理对象的细节。 管理方法注意：k8s 对象应该只使用一种技术进行管理。同一对象的混合和匹配技术会导致未知的行为。    Management technique Operates on Recommended environment Suppor">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-10T03:02:14.000Z">
+<meta property="article:modified_time" content="2020-12-10T05:33:50.762Z">
+<meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="object">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-management/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>k8s-objects-management | 浅秋之枫</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">浅秋之枫</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E7%90%86%E6%96%B9%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">管理方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%85%E8%A6%81%E5%91%BD%E4%BB%A4"><span class="nav-number">2.</span> <span class="nav-text">必要命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B"><span class="nav-number">2.1.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AF%94%E8%BE%83"><span class="nav-number">2.2.</span> <span class="nav-text">比较</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%91%BD%E4%BB%A4%E5%BC%8F%E5%AF%B9%E8%B1%A1%E9%85%8D%E7%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">命令式对象配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B-1"><span class="nav-number">3.1.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AF%94%E8%BE%83-1"><span class="nav-number">3.2.</span> <span class="nav-text">比较</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A3%B0%E6%98%8E%E5%BC%8F%E5%AF%B9%E8%B1%A1%E9%85%8D%E7%BD%AE"><span class="nav-number">4.</span> <span class="nav-text">声明式对象配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B-2"><span class="nav-number">4.1.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AF%94%E8%BE%83-2"><span class="nav-number">4.2.</span> <span class="nav-text">比较</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">浅秋之枫</p>
+  <div class="site-description" itemprop="description">随堂笔记</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-management/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-objects-management
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-10 11:02:14 / 修改时间：13:33:50" itemprop="dateCreated datePublished" datetime="2020-12-10T11:02:14+08:00">2020-12-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>kubectl 命令行工具支持几种不同的方法来创建和管理 k8s 对象。本文档提供了不同方法的概述。阅读<a target="_blank" rel="noopener" href="https://kubectl.docs.kubernetes.io/">Kubectl book</a>，了解 Kubectl 管理对象的细节。</p>
+<h2 id="管理方法"><a href="#管理方法" class="headerlink" title="管理方法"></a>管理方法</h2><p><strong>注意</strong>：k8s 对象应该只使用一种技术进行管理。同一对象的混合和匹配技术会导致未知的行为。</p>
+<table>
+<thead>
+<tr>
+<th align="center">Management technique</th>
+<th align="center">Operates on</th>
+<th align="center">Recommended environment</th>
+<th align="center">Supported writers</th>
+<th align="center">Learning curve</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Imperative commands</td>
+<td align="center">Live objects</td>
+<td align="center">Development projects</td>
+<td align="center">1+</td>
+<td align="center">Lowest</td>
+</tr>
+<tr>
+<td align="center">Imperative object configuration</td>
+<td align="center">Individual files</td>
+<td align="center">Production projects</td>
+<td align="center">1</td>
+<td align="center">Moderate</td>
+</tr>
+<tr>
+<td align="center">Declarative object configuration</td>
+<td align="center">Directories of files</td>
+<td align="center">Production projects</td>
+<td align="center">1+</td>
+<td align="center">Highest</td>
+</tr>
+</tbody></table>
+<h2 id="必要命令"><a href="#必要命令" class="headerlink" title="必要命令"></a>必要命令</h2><p>在使用命令行指令时，用户直接操作集群中的活动对象。用户将操作作为参数或标志提供给 kubectl 指令。</p>
+<p>这是在集群中启动或运行一次性任务的最简单方法。由于此技术直接在活动对象上操作，因此不提供以前配置的历史记录。</p>
+<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><p>通过创建一个部署对象来运行 nginx 容器的实例：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create deployment nginx --image nginx</span><br></pre></td></tr></table></figure>
+
+<h3 id="比较"><a href="#比较" class="headerlink" title="比较"></a>比较</h3><p>与对象配置相比的优势：</p>
+<ul>
+<li>命令很简单，容易学习和记忆。</li>
+<li>命令只需要一个步骤就可以对集群进行更改。</li>
+</ul>
+<p>与对象配置相比的缺点：</p>
+<ul>
+<li>命令不能与变更审查过程集成。</li>
+<li>命令不提供与更改关联的审计跟踪。</li>
+<li>命令不提供记录源，除了活动的记录。</li>
+<li>命令不提供创建新对象的模板。</li>
+</ul>
+<h2 id="命令式对象配置"><a href="#命令式对象配置" class="headerlink" title="命令式对象配置"></a>命令式对象配置</h2><p>在命令式对象配置中，kubectl 命令指定操作(创建、替换等)、可选标志和至少一个文件名。指定的文件必须包含 YAML 或 JSON 格式的对象的完整定义。</p>
+<p><strong>注意</strong>：命令式的 replace 命令用新提供的规范替换现有规范，删除配置文件中缺少的对对象的所有更改。这种方法不应该用于规范独立于配置文件更新的资源类型。例如，LoadBalancer 类型的服务将独立于集群的配置更新其 externalIPs 字段。</p>
+<h3 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h3><p>创建一个定义在配置文件中的对象：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f nginx.yaml</span><br></pre></td></tr></table></figure>
+
+<p>删除在两个配置文件中定义的对象：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl delete -f nginx.yaml -f redis.yaml</span><br></pre></td></tr></table></figure>
+
+<p>通过覆盖在线配置升级由配置定义的对象：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl replace -f nginx.yaml</span><br></pre></td></tr></table></figure>
+
+<h3 id="比较-1"><a href="#比较-1" class="headerlink" title="比较"></a>比较</h3><p>与命令式指令相比的优势：</p>
+<ul>
+<li>对象配置可以存储在 Git 等源代码控制系统中。</li>
+<li>对象配置可以与过程集成，例如在推送前检查更改和审计跟踪。</li>
+<li>对象配置提供了创建新对象的模板。</li>
+</ul>
+<p>与命令式指令相比的缺点：</p>
+<ul>
+<li>对象配置需要对对象模式有基本的了解。</li>
+<li>对象配置需要额外的步骤来编写 YAML 文件。</li>
+</ul>
+<p>与声明式对象配置相比的优点：</p>
+<ul>
+<li>命令式对象配置行为更简单，更容易理解。</li>
+<li>在 k8s 1.5 版本中，命令式对象配置更加成熟。</li>
+</ul>
+<p>与声明式对象配置相比的缺点:</p>
+<ul>
+<li>命令式对象配置最适合文件，而不是目录。</li>
+<li>对活动对象的更新必须反映在配置文件中，否则它们将在下一次替换时丢失。</li>
+</ul>
+<h2 id="声明式对象配置"><a href="#声明式对象配置" class="headerlink" title="声明式对象配置"></a>声明式对象配置</h2><p>当使用声明式对象配置时，用户操作本地存储的对象配置文件，但是用户不定义要对文件执行的操作。kubectl 会自动检测每个对象的创建、更新和删除操作。这允许在目录上工作，不同的对象可能需要不同的操作。</p>
+<p><strong>注意</strong>：声明式对象配置保留其他编写者所做的更改，即使这些更改没有合并回对象配置文件。这可以通过使用 patch API 操作来只编写观察到的差异，而不是使用 replace API 操作来替换整个对象配置来实现。</p>
+<h3 id="示例-2"><a href="#示例-2" class="headerlink" title="示例"></a>示例</h3><p>处理configs目录中的所有对象配置文件，并创建或修补活动对象。可以首先进行diff来查看将要进行的更改，然后应用：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl diff -f configs/</span><br><span class="line">kubectl apply -f configs/</span><br></pre></td></tr></table></figure>
+
+<p>递归处理目录：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl diff -R -f configs/</span><br><span class="line">kubectl apply -R -f configs/</span><br></pre></td></tr></table></figure>
+
+<h3 id="比较-2"><a href="#比较-2" class="headerlink" title="比较"></a>比较</h3><p>与命令式对象配置相比的优势：</p>
+<ul>
+<li>直接对活动对象所做的更改将被保留，即使它们没有合并回配置文件中。</li>
+<li>声明式对象配置更好地支持对每个对象进行目录操作和自动检测操作类型(创建、修补、删除)。</li>
+</ul>
+<p>与命令式对象配置相比的缺点：</p>
+<ul>
+<li>声明式对象配置更难调试和理解意外的结果。</li>
+<li>使用diffs的部分更新创建复杂的合并和补丁操作。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/object/" rel="tag"># object</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/10/k8s-objects-knowledge/" rel="prev" title="k8s-对象">
+                  <i class="fa fa-chevron-left"></i> k8s-对象
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/10/k8s-objects-name-and-id/" rel="next" title="k8s-对象名称和ID">
+                  k8s-对象名称和ID <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">浅秋之枫</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>
