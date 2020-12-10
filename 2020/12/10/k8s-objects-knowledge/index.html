@@ -23,18 +23,21 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="随堂笔记">
-<meta property="og:type" content="website">
-<meta property="og:title" content="浅秋之枫">
-<meta property="og:url" content="https://qianqiuzhifeng.github.io/categories/k8s/index.html">
+<meta name="description" content="这个页面解释了 k8s 对象如何在 k8s API 中表示，以及如何用.yaml 格式表示它们。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-对象">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-knowledge/index.html">
 <meta property="og:site_name" content="浅秋之枫">
-<meta property="og:description" content="随堂笔记">
+<meta property="og:description" content="这个页面解释了 k8s 对象如何在 k8s API 中表示，以及如何用.yaml 格式表示它们。">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-10T01:53:32.000Z">
+<meta property="article:modified_time" content="2020-12-10T01:55:23.522Z">
 <meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s， object">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://qianqiuzhifeng.github.io/categories/k8s/">
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-knowledge/">
 
 
 <script class="page-configurations">
@@ -42,11 +45,11 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
-<title>分类: k8s | 浅秋之枫</title>
+<title>k8s-对象 | 浅秋之枫</title>
   
 
 
@@ -193,210 +196,96 @@
 </noscript>
 
 
-    <div class="main-inner category posts-collapse">
+    <div class="main-inner post posts-expand">
 
 
   
-  
-  
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        <h2 class="collection-header">k8s
-          <small>分类</small>
-        </h2>
-      </div>
 
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-knowledge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-对象
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
       
-    <div class="collection-year">
-      <span class="collection-header">2020</span>
+
+      <time title="创建时间：2020-12-10 09:53:32 / 修改时间：09:55:23" itemprop="dateCreated datePublished" datetime="2020-12-10T09:53:32+08:00">2020-12-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>这个页面解释了 k8s 对象如何在 k8s API 中表示，以及如何用.yaml 格式表示它们。</p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-10T09:53:32+08:00"
-              content="2020-12-10">
-          12-10
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/10/k8s-objects-knowledge/" itemprop="url">
-            <span itemprop="name">k8s-对象</span>
-          </a>
-      </div>
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s%EF%BC%8C-object/" rel="tag"># k8s， object</a>
+          </div>
 
-      
-    </header>
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/10/k8s-api-server/" rel="prev" title="k8s-api-server">
+                  <i class="fa fa-chevron-left"></i> k8s-api-server
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
   </article>
+</div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-10T09:09:05+08:00"
-              content="2020-12-10">
-          12-10
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/10/k8s-api-server/" itemprop="url">
-            <span itemprop="name">k8s-api-server</span>
-          </a>
-      </div>
 
-      
-    </header>
-  </article>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-09T15:17:08+08:00"
-              content="2020-12-09">
-          12-09
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/09/k8s-component-api-server/" itemprop="url">
-            <span itemprop="name">k8s-api-server</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-09T15:07:54+08:00"
-              content="2020-12-09">
-          12-09
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/09/k8s-tools-kind-local-registry/" itemprop="url">
-            <span itemprop="name">k8s-kind-local-registry</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-09T10:24:07+08:00"
-              content="2020-12-09">
-          12-09
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/09/k8s-tools-kind-ingress/" itemprop="url">
-            <span itemprop="name">k8s-kind-ingress</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-09T09:15:55+08:00"
-              content="2020-12-09">
-          12-09
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/09/k8s-tools-kind-config/" itemprop="url">
-            <span itemprop="name">k8s-kind-config</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-08T10:10:38+08:00"
-              content="2020-12-08">
-          12-08
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/08/k8s-tools-kind-knowledge/" itemprop="url">
-            <span itemprop="name">k8s-kind</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-08T09:33:14+08:00"
-              content="2020-12-08">
-          12-08
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/08/k8s-tools-kubectl-knowledge/" itemprop="url">
-            <span itemprop="name">k8s-kubectl</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2020-12-07T16:06:00+08:00"
-              content="2020-12-07">
-          12-07
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2020/12/07/k8s-component-knowledge/" itemprop="url">
-            <span itemprop="name">k8s-组件</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-    </div>
-  </div>
-  
-  
-  
 
 
 <script>
