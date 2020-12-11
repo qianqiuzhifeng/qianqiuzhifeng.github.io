@@ -23,34 +23,30 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="本文主要指出 Python 指南中需要关注的知识点 函数参数默认值最常见的形式是给参数定义默认值。 1234567891011def ask_ok(prompt, retries&#x3D;4, reminder&#x3D;&amp;#x27;Please try again!&amp;#x27;):    while True:        ok &#x3D; input(prompt)        if ok in (&amp;#x27;y&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="函数">
-<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/03/python-tutorial-knowledge-one/index.html">
+<meta name="description" content="随堂笔记">
+<meta property="og:type" content="website">
+<meta property="og:title" content="浅秋之枫">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/page/3/index.html">
 <meta property="og:site_name" content="浅秋之枫">
-<meta property="og:description" content="本文主要指出 Python 指南中需要关注的知识点 函数参数默认值最常见的形式是给参数定义默认值。 1234567891011def ask_ok(prompt, retries&#x3D;4, reminder&#x3D;&amp;#x27;Please try again!&amp;#x27;):    while True:        ok &#x3D; input(prompt)        if ok in (&amp;#x27;y&amp;">
+<meta property="og:description" content="随堂笔记">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-12-03T02:16:58.000Z">
-<meta property="article:modified_time" content="2020-12-07T06:48:05.113Z">
 <meta property="article:author" content="浅秋之枫">
-<meta property="article:tag" content="python">
-<meta property="article:tag" content="doc">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/03/python-tutorial-knowledge-one/">
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/page/3/">
 
 
 <script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : false,
-    isPost : true,
+    isHome : true,
+    isPost : false,
     lang   : 'zh-CN'
   };
 </script>
-<title>函数 | 浅秋之枫</title>
+<title>浅秋之枫</title>
   
 
 
@@ -135,7 +131,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -148,7 +144,6 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-number">1.</span> <span class="nav-text">函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E9%BB%98%E8%AE%A4%E5%80%BC"><span class="nav-number">1.1.</span> <span class="nav-text">参数默认值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%AD%97%E5%8F%82%E6%95%B0"><span class="nav-number">1.2.</span> <span class="nav-text">关键字参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E6%84%8F%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8"><span class="nav-number">1.3.</span> <span class="nav-text">任意参数列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%8C%85%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8"><span class="nav-number">1.4.</span> <span class="nav-text">解包参数列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lambda-%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">1.5.</span> <span class="nav-text">Lambda 表达式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E5%99%A8%E5%87%BD%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">生成器函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%8F%E7%A8%8B%E5%87%BD%E6%95%B0"><span class="nav-number">3.</span> <span class="nav-text">协程函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">3.1.</span> <span class="nav-text">应用场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%82%E6%AD%A5%E7%94%9F%E6%88%90%E5%99%A8%E5%87%BD%E6%95%B0"><span class="nav-number">4.</span> <span class="nav-text">异步生成器函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E7%BD%AE%E5%87%BD%E6%95%B0"><span class="nav-number">5.</span> <span class="nav-text">内置函数</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -198,10 +193,9 @@
 </noscript>
 
 
-    <div class="main-inner post posts-expand">
+    <div class="main-inner index posts-expand">
 
-
-  
+    
 
 
 <div class="post-block">
@@ -221,9 +215,9 @@
       <meta itemprop="name" content="浅秋之枫">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          函数
-        </h1>
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/03/python-tutorial-knowledge-one/" class="post-title-link" itemprop="url">函数</a>
+        </h2>
 
         <div class="post-meta-container">
           <div class="post-meta">
@@ -262,7 +256,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>本文主要指出 Python 指南中需要关注的知识点</p>
+          <p>本文主要指出 Python 指南中需要关注的知识点</p>
 <h2 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h2><h3 id="参数默认值"><a href="#参数默认值" class="headerlink" title="参数默认值"></a>参数默认值</h3><p>最常见的形式是给参数定义默认值。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">ask_ok</span>(<span class="params">prompt, retries=<span class="number">4</span>, reminder=<span class="string">&#x27;Please try again!&#x27;</span></span>):</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        ok = <span class="built_in">input</span>(prompt)</span><br><span class="line">        <span class="keyword">if</span> ok <span class="keyword">in</span> (<span class="string">&#x27;y&#x27;</span>, <span class="string">&#x27;ye&#x27;</span>, <span class="string">&#x27;yes&#x27;</span>):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">if</span> ok <span class="keyword">in</span> (<span class="string">&#x27;n&#x27;</span>, <span class="string">&#x27;no&#x27;</span>, <span class="string">&#x27;nop&#x27;</span>, <span class="string">&#x27;nope&#x27;</span>):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        retries = retries - <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> retries &lt; <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&#x27;invalid user response&#x27;</span>)</span><br><span class="line">        print(reminder)</span><br></pre></td></tr></table></figure>
 
@@ -318,6 +312,7 @@
 <li>协程比线程、进程处理 Network IO 要高效的多。适用于 Network IO 密集型任务。</li>
 </ul>
 <h2 id="异步生成器函数"><a href="#异步生成器函数" class="headerlink" title="异步生成器函数"></a>异步生成器函数</h2><h2 id="内置函数"><a href="#内置函数" class="headerlink" title="内置函数"></a>内置函数</h2>
+      
     </div>
 
     
@@ -325,22 +320,8 @@
     
 
     <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/python/" rel="tag"># python</a>
-              <a href="/tags/doc/" rel="tag"># doc</a>
-          </div>
-
-        
-
-          <div class="post-nav">
-            <div class="post-nav-item">
-            </div>
-            <div class="post-nav-item">
-                <a href="/2020/12/03/python-tutorial-knowledge-two/" rel="next" title="命名空间和作用域">
-                  命名空间和作用域 <i class="fa fa-chevron-right"></i>
-                </a>
-            </div>
-          </div>
+        <div class="post-eof"></div>
+      
     </footer>
   </article>
 </div>
@@ -348,7 +329,9 @@
 
 
 
-
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
 
 
 <script>

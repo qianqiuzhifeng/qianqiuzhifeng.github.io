@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="k8s 支持由同一物理集群支持的多个虚拟集群。这些虚拟集群称为 namespaces。 何时使用多个命名空间namespace 用于跨多个团队或项目有许多用户的环境中。对于有几个到几十个用户的集群，您根本不需要创建或考虑 namespace。当您需要 namespace 提供的特性时，请开始使用 namespace。 namespace 为名称提供一个作用域。资源的名称在 namespace 内必">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-objects-namespace">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-namespace/index.html">
+<meta property="og:site_name" content="浅秋之枫">
+<meta property="og:description" content="k8s 支持由同一物理集群支持的多个虚拟集群。这些虚拟集群称为 namespaces。 何时使用多个命名空间namespace 用于跨多个团队或项目有许多用户的环境中。对于有几个到几十个用户的集群，您根本不需要创建或考虑 namespace。当您需要 namespace 提供的特性时，请开始使用 namespace。 namespace 为名称提供一个作用域。资源的名称在 namespace 内必">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-10T05:54:54.000Z">
+<meta property="article:modified_time" content="2020-12-10T06:19:11.662Z">
+<meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="object">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-namespace/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>k8s-objects-namespace | 浅秋之枫</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">浅秋之枫</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%95%E6%97%B6%E4%BD%BF%E7%94%A8%E5%A4%9A%E4%B8%AA%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4"><span class="nav-number">1.</span> <span class="nav-text">何时使用多个命名空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4"><span class="nav-number">2.</span> <span class="nav-text">使用命名空间</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4"><span class="nav-number">2.1.</span> <span class="nav-text">查看命名空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E8%AF%B7%E6%B1%82%E8%AE%BE%E7%BD%AE%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4"><span class="nav-number">2.2.</span> <span class="nav-text">为请求设置命名空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%E9%A6%96%E9%80%89%E9%A1%B9"><span class="nav-number">2.3.</span> <span class="nav-text">设置命名空间首选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%E5%92%8CDNS"><span class="nav-number">2.4.</span> <span class="nav-text">命名空间和DNS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B6%E9%9D%9E%E6%89%80%E6%9C%89%E5%AF%B9%E8%B1%A1%E9%83%BD%E5%9C%A8%E5%90%8D%E7%A7%B0%E7%A9%BA%E9%97%B4%E4%B8%AD"><span class="nav-number">2.5.</span> <span class="nav-text">并非所有对象都在名称空间中</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">浅秋之枫</p>
+  <div class="site-description" itemprop="description">随堂笔记</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-namespace/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-objects-namespace
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-10 13:54:54 / 修改时间：14:19:11" itemprop="dateCreated datePublished" datetime="2020-12-10T13:54:54+08:00">2020-12-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>k8s 支持由同一物理集群支持的多个虚拟集群。这些虚拟集群称为 namespaces。</p>
+<h2 id="何时使用多个命名空间"><a href="#何时使用多个命名空间" class="headerlink" title="何时使用多个命名空间"></a>何时使用多个命名空间</h2><p>namespace 用于跨多个团队或项目有许多用户的环境中。对于有几个到几十个用户的集群，您根本不需要创建或考虑 namespace。当您需要 namespace 提供的特性时，请开始使用 namespace。</p>
+<p>namespace 为名称提供一个作用域。资源的名称在 namespace 内必须是惟一的，但不能跨 namespace。namespace 不能相互嵌套，每个 k8s 资源只能在一个 namespace 中。</p>
+<p>namespace 是在多个用户之间划分集群资源的一种方式。</p>
+<p>没有必要使用多个 namespace 来分隔稍微不同的资源，例如同一软件的不同版本:使用标签来区分同一 namespace 内的资源。</p>
+<h2 id="使用命名空间"><a href="#使用命名空间" class="headerlink" title="使用命名空间"></a>使用命名空间</h2><p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/namespaces">命名空间管理指南文档</a>中描述了命名空间的创建和删除。</p>
+<p><strong>注意</strong>：避免创建前缀为 kube-的命名空间，因为它是为 k8s 系统命名空间保留的。</p>
+<h3 id="查看命名空间"><a href="#查看命名空间" class="headerlink" title="查看命名空间"></a>查看命名空间</h3><p>可以列出集群中当前命名空间：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get namespace</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">NAME              STATUS   AGE</span><br><span class="line">default           Active   1d</span><br><span class="line">kube-node-lease   Active   1d</span><br><span class="line">kube-public       Active   1d</span><br><span class="line">kube-system       Active   1d</span><br></pre></td></tr></table></figure>
+
+<p>K8s 从四个初始命名空间开始：</p>
+<ul>
+<li>default：没有其他命名空间资源的默认命名空间。</li>
+<li>kube-system：k8s 系统为对象创建的命名空间。</li>
+<li>kube-public：此命名空间是自动创建的，所有用户(包括未经过身份验证的用户)都可读。这个命名空间主要是为集群使用保留的，以防某些资源在整个集群中是可见的和可读的。这个命名空间的公共方面只是一种约定，而不是要求。</li>
+<li>kube-node-lease：这个命名空间用于与每个节点关联的租赁对象，它可以随着集群的扩展提高节点的性能。</li>
+</ul>
+<h3 id="为请求设置命名空间"><a href="#为请求设置命名空间" class="headerlink" title="为请求设置命名空间"></a>为请求设置命名空间</h3><p>可以使用–namespace标志为当前请求设置命名空间。</p>
+<p>例如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl run nginx --image=nginx --namespace=&lt;insert-namespace-name-here&gt;</span><br><span class="line">kubectl get pods --namespace=&lt;insert-namespace-name-here&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置命名空间首选项"><a href="#设置命名空间首选项" class="headerlink" title="设置命名空间首选项"></a>设置命名空间首选项</h3><p>您可以在该上下文中永久保存所有后续kubectl命令的命名空间。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl config set-context --current --namespace=&lt;insert-namespace-name-here&gt;</span><br><span class="line"><span class="meta">#</span><span class="bash"> Validate it</span></span><br><span class="line">kubectl config view --minify | grep namespace:</span><br></pre></td></tr></table></figure>
+
+<h3 id="命名空间和DNS"><a href="#命名空间和DNS" class="headerlink" title="命名空间和DNS"></a>命名空间和DNS</h3><p>当您创建一个服务时，它会创建一个相应的DNS条目。此条目的形式为<service-name>.<namespace-name>.vcs.cluster.local，这意味着如果容器只使用<service-name>，它将解析为一个命名空间本地的服务。这对于跨多个命名空间(如开发、登台和生产)使用相同的配置非常有用。如果希望跨命名空间访问，则需要使用完全限定域名(FQDN)。</p>
+<h3 id="并非所有对象都在名称空间中"><a href="#并非所有对象都在名称空间中" class="headerlink" title="并非所有对象都在名称空间中"></a>并非所有对象都在名称空间中</h3><p>大多数k8s资源(例如pods、服务、复制控制器和其他资源)都位于某些命名空间中。然而，命令空间资源本身并不在命名空间中。底层资源，比如节点和persistentvolume，不存在于任何命名空间中。</p>
+<p>查看哪些Kubernetes资源在名称空间中，哪些不在：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> In a namespace</span></span><br><span class="line">kubectl api-resources --namespaced=true</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Not <span class="keyword">in</span> a namespace</span></span><br><span class="line">kubectl api-resources --namespaced=false</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/object/" rel="tag"># object</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/10/k8s-objects-name-and-id/" rel="prev" title="k8s-对象名称和ID">
+                  <i class="fa fa-chevron-left"></i> k8s-对象名称和ID
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/10/k8s-objects-label-and-selector/" rel="next" title="k8s-对象标签和选择器">
+                  k8s-对象标签和选择器 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">浅秋之枫</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>

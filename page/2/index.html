@@ -156,7 +156,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -194,6 +194,365 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/09/k8s-tools-kind-ingress/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/09/k8s-tools-kind-ingress/" class="post-title-link" itemprop="url">k8s-kind-ingress</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-09 10:24:07 / 修改时间：14:57:22" itemprop="dateCreated datePublished" datetime="2020-12-09T10:24:07+08:00">2020-12-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Ingress-Controller"><a href="#Ingress-Controller" class="headerlink" title="Ingress Controller"></a>Ingress Controller</h2><p>在创建集群时，可以利用 KIND 的 extraPortMapping 配置选项，将端口从主机转发到运行在节点上的 ingress 控制器。</p>
+<p>还可以通过在 kubeadm InitConfiguration 中使用节点标签来设置自定义节点标签，以便 ingress 控制器节点选择器使用。</p>
+<ul>
+<li><p>创建集群</p>
+</li>
+<li><p>部署 Ingress Controller，可以使用以下 ingress controllers：</p>
+<ul>
+<li>Ambassador</li>
+<li>Contour</li>
+<li>Ingress NGINX</li>
+</ul>
+</li>
+</ul>
+<h3 id="创建集群"><a href="#创建集群" class="headerlink" title="创建集群"></a>创建集群</h3><p>创建一个包含 extraPortMappings 和 node-labels 的 kind 集群。</p>
+<ul>
+<li><p>extraPortMappings：允许本地主机通过端口 80/443 向 Ingress controller 发出请求。</p>
+</li>
+<li><p>node-labels：只允许 ingress controller 运行在匹配标签选择器的指定节点上。</p>
+</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | kind create cluster --config=-</span><br><span class="line">kind: Cluster</span><br><span class="line">apiVersion: kind.x-k8s.io/v1alpha4</span><br><span class="line">nodes:</span><br><span class="line">- role: control-plane</span><br><span class="line">  kubeadmConfigPatches:</span><br><span class="line">  - |</span><br><span class="line">    kind: InitConfiguration</span><br><span class="line">    nodeRegistration:</span><br><span class="line">      kubeletExtraArgs:</span><br><span class="line">        node-labels: &quot;ingress-ready=true&quot;</span><br><span class="line">  extraPortMappings:</span><br><span class="line">  - containerPort: 80</span><br><span class="line">    hostPort: 80</span><br><span class="line">    protocol: TCP</span><br><span class="line">  - containerPort: 443</span><br><span class="line">    hostPort: 443</span><br><span class="line">    protocol: TCP</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ambassador"><a href="#Ambassador" class="headerlink" title="Ambassador"></a>Ambassador</h3><p>Ambassador 可以在<a target="_blank" rel="noopener" href="https://www.getambassador.io/docs/latest/topics/install/aes-operator/">Ambassador operator</a>帮助下安装。</p>
+<p>首先安装 CRDS：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://github.com/datawire/ambassador-operator/releases/latest/download/ambassador-operator-crds.yaml</span><br></pre></td></tr></table></figure>
+
+<p>现在安装用于在 Ambassador 名称空间中使用操作符安装 Ambassador 的类型特定清单：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -n ambassador -f https://github.com/datawire/ambassador-operator/releases/latest/download/ambassador-operator-kind.yaml</span><br><span class="line">kubectl wait --timeout=180s -n ambassador --for=condition=deployed ambassadorinstallations/ambassador</span><br></pre></td></tr></table></figure>
+
+<p>Ambassador 现在可以使用了。您现在可以尝试使用 Ingress 的示例，但是 Ambassador 不会自动加载那里定义的 Ingress。</p>
+<p>Ingress class: 被认可为 Ambassador(否则不予理睬)。加载这个例子后，你可以添加这个注释:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl annotate ingress example-ingress kubernetes.io/ingress.class=ambassador</span><br></pre></td></tr></table></figure>
+
+<h3 id="Contour"><a href="#Contour" class="headerlink" title="Contour"></a>Contour</h3><p>部署 Contour 组件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://projectcontour.io/quickstart/contour.yaml</span><br></pre></td></tr></table></figure>
+
+<p>应用一种特定的补丁，以转发主机端口到 ingress controller，设置污染容忍和调度它到自定义标签节点。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">&quot;spec&quot;</span>: &#123;</span><br><span class="line">    <span class="attr">&quot;template&quot;</span>: &#123;</span><br><span class="line">      <span class="attr">&quot;spec&quot;</span>: &#123;</span><br><span class="line">        <span class="attr">&quot;nodeSelector&quot;</span>: &#123;</span><br><span class="line">          <span class="attr">&quot;ingress-ready&quot;</span>: <span class="string">&quot;true&quot;</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">&quot;tolerations&quot;</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="attr">&quot;key&quot;</span>: <span class="string">&quot;node-role.kubernetes.io/master&quot;</span>,</span><br><span class="line">          <span class="attr">&quot;operator&quot;</span>: <span class="string">&quot;Equal&quot;</span>,</span><br><span class="line">          <span class="attr">&quot;effect&quot;</span>: <span class="string">&quot;NoSchedule&quot;</span></span><br><span class="line">        &#125;</span><br><span class="line">        ]</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">`</span><br></pre></td></tr></table></figure>
+
+<p>通过运行：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl patch daemonsets -n projectcontour envoy -p &#x27;&#123;&quot;spec&quot;:&#123;&quot;template&quot;:&#123;&quot;spec&quot;:&#123;&quot;nodeSelector&quot;:&#123;&quot;ingress-ready&quot;:&quot;true&quot;&#125;,&quot;tolerations&quot;:[&#123;&quot;key&quot;:&quot;node-role.kubernetes.io/master&quot;,&quot;operator&quot;:&quot;Equal&quot;,&quot;effect&quot;:&quot;NoSchedule&quot;&#125;]&#125;&#125;&#125;&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ingress-NGINX（已验证）"><a href="#Ingress-NGINX（已验证）" class="headerlink" title="Ingress NGINX（已验证）"></a>Ingress NGINX（已验证）</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>：镜像k8s.gcr.io/ingress-nginx/controller:v0.41.2@sha256:1f4f402b9c14f3ae92b11ada1dfe9893a88f0faeb0b2f4b903e2c67a0c3bf0de无法拉取，使用docker官网镜像acicn/ingress-nginx-controller:v0.41.2@sha256:8aa4fda472ec83ae59fe0ce9720684d769ed277ff9bdcbb0169178dc9d1f8e85替换。</p>
+<p>这个清单包含了一些特定的补丁，用来将主机端口转发到 ingress controller，设置污染容限并将其调度到自定义标记的节点。</p>
+<p>现在 Ingress 设置完成，等待，直到准备好处理正在运行的请求。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl wait --namespace ingress-nginx \</span><br><span class="line">  --for=condition=ready pod \</span><br><span class="line">  --selector=app.kubernetes.io/component=controller \</span><br><span class="line">  --timeout=90s</span><br></pre></td></tr></table></figure>
+
+<h2 id="Using-Ingress"><a href="#Using-Ingress" class="headerlink" title="Using Ingress"></a>Using Ingress</h2><p>下面的例子是创建一个简单的 http-echo 服务和一个路由到这些服务的 Ingress 对象。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">foo-app</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">foo</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">foo-app</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">hashicorp/http-echo:0.2.3</span></span><br><span class="line">    <span class="attr">args:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">&quot;-text=foo&quot;</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">foo-service</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">foo</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">  <span class="comment"># Default port used by the image</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">5678</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">bar-app</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">bar</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">bar-app</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">hashicorp/http-echo:0.2.3</span></span><br><span class="line">    <span class="attr">args:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">&quot;-text=bar&quot;</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">bar-service</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">bar</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">  <span class="comment"># Default port used by the image</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">5678</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">example-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/foo</span></span><br><span class="line">        <span class="attr">backend:</span></span><br><span class="line">          <span class="attr">serviceName:</span> <span class="string">foo-service</span></span><br><span class="line">          <span class="attr">servicePort:</span> <span class="number">5678</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/bar</span></span><br><span class="line">        <span class="attr">backend:</span></span><br><span class="line">          <span class="attr">serviceName:</span> <span class="string">bar-service</span></span><br><span class="line">          <span class="attr">servicePort:</span> <span class="number">5678</span></span><br><span class="line"><span class="meta">---</span></span><br></pre></td></tr></table></figure>
+
+<p>应用：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/usage.yaml</span><br></pre></td></tr></table></figure>
+
+<p>现在验证Ingress是否工作：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> should output <span class="string">&quot;foo&quot;</span></span></span><br><span class="line">curl localhost/foo</span><br><span class="line"><span class="meta">#</span><span class="bash"> should output <span class="string">&quot;bar&quot;</span></span></span><br><span class="line">curl localhost/bar</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/09/k8s-tools-kind-config/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/09/k8s-tools-kind-config/" class="post-title-link" itemprop="url">k8s-kind-config</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-09 09:15:55 / 修改时间：10:16:43" itemprop="dateCreated datePublished" datetime="2020-12-09T09:15:55+08:00">2020-12-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="基础配置"><a href="#基础配置" class="headerlink" title="基础配置"></a>基础配置</h2><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="集群配置"><a href="#集群配置" class="headerlink" title="集群配置"></a>集群配置</h2><h3 id="Feature-Gates-特性开关"><a href="#Feature-Gates-特性开关" class="headerlink" title="Feature Gates(特性开关)"></a>Feature Gates(特性开关)</h3><p>可以通过以下配置启用所有 k8s 组件的 k8s 特性开关。</p>
+<p>k8s 特性开关见 k8s-feature-gates 章节。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">featureGates:</span></span><br><span class="line">  <span class="comment"># any feature gate can be enabled here with &quot;Name&quot;: true</span></span><br><span class="line">  <span class="comment"># or disabled here with &quot;Name&quot;: false</span></span><br><span class="line">  <span class="comment"># not all feature gates are tested, however</span></span><br><span class="line">  <span class="attr">&quot;CSIMigration&quot;:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Runtime-Config（运行时配置）"><a href="#Runtime-Config（运行时配置）" class="headerlink" title="Runtime Config（运行时配置）"></a>Runtime Config（运行时配置）</h3><p>k8s API server 运行时配置可以使用 runtimeconfig 进行配置。</p>
+<p>k8s API server 运行时配置见 k8s-api-server 章节。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">runtimeConfig:</span></span><br><span class="line">  <span class="attr">&quot;api/alpha&quot;:</span> <span class="string">&quot;false&quot;</span> <span class="comment"># 禁用 api/alpha APIs</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="网络"><a href="#网络" class="headerlink" title="网络"></a>网络</h3><p>关于集群网络配置可以通过 networking 属性配置。</p>
+<h4 id="IP-Family"><a href="#IP-Family" class="headerlink" title="IP Family"></a>IP Family</h4><p>Kind 可以支持 IP6 集群，你可以通过以下配置从 IP4 转换：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="attr">ipFamily:</span> <span class="string">ipv6</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>： 为了使用这个功能，你需要修改 docker daemon 配置启用 ipv6。</p>
+<h4 id="API-server"><a href="#API-server" class="headerlink" title="API server"></a>API server</h4><p>可以通过以下配置修改 API server 监听地址：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="comment"># WARNING: It is _strongly_ recommended that you keep this the default</span></span><br><span class="line">  <span class="comment"># (127.0.0.1) for security reasons. However it is possible to change this.</span></span><br><span class="line">  <span class="attr">apiServerAddress:</span> <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">  <span class="comment"># By default the API server listens on a random open port.</span></span><br><span class="line">  <span class="comment"># You may choose a specific port but probably don&#x27;t need to in most cases.</span></span><br><span class="line">  <span class="comment"># Using a random port makes it easier to spin up multiple clusters.</span></span><br><span class="line">  <span class="attr">apiServerPort:</span> <span class="number">6443</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="pod-subnet"><a href="#pod-subnet" class="headerlink" title="pod subnet"></a>pod subnet</h4><p>pod IPs 可以通过配置 subnet 进行设置。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="attr">podSubnet:</span> <span class="string">&quot;10.244.0.0/16&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="service-subnet"><a href="#service-subnet" class="headerlink" title="service subnet"></a>service subnet</h4><p>service IPs 可以通过配置 k8s service subnet 进行设置。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="attr">serviceSubnet:</span> <span class="string">&quot;10.96.0.0/12&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Disable-Default-CNI"><a href="#Disable-Default-CNI" class="headerlink" title="Disable Default CNI"></a>Disable Default CNI</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="comment"># the default CNI will not be installed</span></span><br><span class="line">  <span class="attr">disableDefaultCNI:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="kube-proxy-mode"><a href="#kube-proxy-mode" class="headerlink" title="kube-proxy mode"></a>kube-proxy mode</h4><p>kube-proxy 模式可以通过配置 kube-proxy mode，包括 iptables 和 ipvs， 默认使用 iptables。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kind: Cluster</span><br><span class="line">apiVersion: kind.x-k8s.io/v1alpha4</span><br><span class="line">networking:</span><br><span class="line">  kubeProxyMode: <span class="string">&quot;ipvs&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Nodes"><a href="#Nodes" class="headerlink" title="Nodes"></a>Nodes</h3><p>kind：cluster 对象有 nodes 属性，包括一个 node 对象集合，如果不设置的话，默认是：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="comment"># one node hosting a control plane</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br></pre></td></tr></table></figure>
+
+<p>可以通过以下配置创建多节点集群：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="comment"># One control plane node and three &quot;workers&quot;.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># While these will not add more real compute capacity and</span></span><br><span class="line"><span class="comment"># have limited isolation, this can be useful for testing</span></span><br><span class="line"><span class="comment"># rolling updates etc.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># The API-server and other control plane components will be</span></span><br><span class="line"><span class="comment"># on the control-plane node.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># You probably don&#x27;t need this unless you are testing Kubernetes itself.</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br></pre></td></tr></table></figure>
+
+<p>可以通过指定一个 k8s 版本设置 node 容器镜像。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">kindest/node:v1.16.4@sha256:b91a2c2317a000f3a783489dfb755064177dbc3a0b2f4147d50f04825d016f55</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Pre-Node-Options"><a href="#Pre-Node-Options" class="headerlink" title="Pre-Node Options"></a>Pre-Node Options</h2><h3 id="Extra-Mounts"><a href="#Extra-Mounts" class="headerlink" title="Extra Mounts"></a>Extra Mounts</h3><p>Extra Mounts 可以用来通过主机上的存储传递到 kind 节点，以保存数据，通过代码挂载等等。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">    <span class="comment"># add a mount from /path/to/my/files on the host to /files on the node</span></span><br><span class="line">    <span class="attr">extraMounts:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">hostPath:</span> <span class="string">/path/to/my/files/</span></span><br><span class="line">        <span class="attr">containerPath:</span> <span class="string">/files</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Extra-Port-Mappings"><a href="#Extra-Port-Mappings" class="headerlink" title="Extra Port Mappings"></a>Extra Port Mappings</h3><p>可以使用额外的端口映射来转发到 kind 节点。这是一个跨平台的选择，让流量进入你的同类集群。</p>
+<p>在 Linux 上使用 docker，您可以简单地将流量从主机发送到节点 IPs，而不需要它，但是要覆盖 macOS 和 Windows，您需要使用它们。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">    <span class="comment"># port forward 80 on the host to 80 on this node</span></span><br><span class="line">    <span class="attr">extraPortMappings:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br><span class="line">        <span class="attr">hostPort:</span> <span class="number">80</span></span><br><span class="line">        <span class="comment"># optional: set the bind address on the host</span></span><br><span class="line">        <span class="comment"># 0.0.0.0 is the current default</span></span><br><span class="line">        <span class="attr">listenAddress:</span> <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">        <span class="comment"># optional: set the protocol to one of TCP, UDP, SCTP.</span></span><br><span class="line">        <span class="comment"># TCP is the default</span></span><br><span class="line">        <span class="attr">protocol:</span> <span class="string">TCP</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Kubeadm-Config-Patches"><a href="#Kubeadm-Config-Patches" class="headerlink" title="Kubeadm Config Patches"></a>Kubeadm Config Patches</h3><p>Kind 可以使用 kubeadm 配置集群节点。kind 在第一个 control-plane 节点运行 kubeadm init, 以便它能够使用 kubeadm 进行配置。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">    <span class="attr">kubeadmConfigPatches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">|</span></span><br><span class="line">        <span class="attr">kind:</span> <span class="string">InitConfiguration</span></span><br><span class="line">        <span class="attr">nodeRegistration:</span></span><br><span class="line">          <span class="attr">kubeletExtraArgs:</span></span><br><span class="line">            <span class="attr">node-labels:</span> <span class="string">&quot;my-label=true&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>在 kind 集群配置的其他节点上，例如 worker 或者 control-plane (in HA mode）。kind 运行 kubeadm join，可以使用 JoinConfigration 配置。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line">    <span class="attr">kubeadmConfigPatches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">|</span></span><br><span class="line">        <span class="attr">kind:</span> <span class="string">JoinConfiguration</span></span><br><span class="line">        <span class="attr">nodeRegistration:</span></span><br><span class="line">          <span class="attr">kubeletExtraArgs:</span></span><br><span class="line">            <span class="attr">node-labels:</span> <span class="string">&quot;my-label2=true&quot;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">    <span class="attr">kubeadmConfigPatches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">|</span></span><br><span class="line">        <span class="attr">kind:</span> <span class="string">JoinConfiguration</span></span><br><span class="line">        <span class="attr">nodeRegistration:</span></span><br><span class="line">          <span class="attr">kubeletExtraArgs:</span></span><br><span class="line">            <span class="attr">node-labels:</span> <span class="string">&quot;my-label3=true&quot;</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/08/k8s-tools-kind-knowledge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/08/k8s-tools-kind-knowledge/" class="post-title-link" itemprop="url">k8s-kind</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-08 10:10:38" itemprop="dateCreated datePublished" datetime="2020-12-08T10:10:38+08:00">2020-12-08</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-09 15:17:06" itemprop="dateModified" datetime="2020-12-09T15:17:06+08:00">2020-12-09</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><a target="_blank" rel="noopener" href="https://kind.sigs.k8s.io/docs">官方文档</a></p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 下载</span></span><br><span class="line">wget -O kind -c https://kind.sigs.k8s.io/dl/v0.9.0/kind-linux-amd64</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 赋予可执行</span></span><br><span class="line">chmod +x ./kind</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 移动到指令目录</span></span><br><span class="line">mv ./kind /usr/local/bin/kind</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 测试</span></span><br><span class="line">kind -h</span><br></pre></td></tr></table></figure>
+
+<h2 id="指令"><a href="#指令" class="headerlink" title="指令"></a>指令</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 创建集群</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建集群后，会自动生成~/.kube/config文件</span></span><br><span class="line">kind create cluster [--config  config.yaml]</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看创建集群帮助文档</span></span><br><span class="line">kind create cluster --help</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查询集群</span></span><br><span class="line">kind get clusters</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除集群</span></span><br><span class="line">kind delete cluster [--name xxx]</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 加载镜像</span></span><br><span class="line">kind load docker-image my-custom-image --name kind</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看集群节点镜像</span></span><br><span class="line">docker exec -it my-node-name crictl images</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 构建镜像</span></span><br><span class="line">kind build node-image [--type bazel|docker]</span><br></pre></td></tr></table></figure>
+
+<h2 id="高级"><a href="#高级" class="headerlink" title="高级"></a>高级</h2><h3 id="配置kind集群"><a href="#配置kind集群" class="headerlink" title="配置kind集群"></a>配置kind集群</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kind create cluster --config kind-example-config.yaml</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>多节点集群</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># three node (two workers) cluster config</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="attr">apiServerAddress:</span> <span class="string">&quot;192.168.56.101&quot;</span> <span class="comment"># 配置集群网络地址</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br></pre></td></tr></table></figure>
+
+<img src="/2020/12/08/k8s-tools-kind-knowledge/multi-node-cluster.png" class="" title="多节点集群">
+
+<ul>
+<li>控制层高可用集群</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># a cluster with 3 control-plane nodes and 3 workers</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">worker</span></span><br></pre></td></tr></table></figure>
+
+<img src="/2020/12/08/k8s-tools-kind-knowledge/control-plane-ha-cluster.png" class="" title="控制层高可用集群">
+
+<ul>
+<li>宿主机端口映射</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">Cluster</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kind.x-k8s.io/v1alpha4</span></span><br><span class="line"><span class="attr">nodes:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">role:</span> <span class="string">control-plane</span></span><br><span class="line">  <span class="attr">extraPortMappings:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br><span class="line">    <span class="attr">hostPort:</span> <span class="number">80</span></span><br><span class="line">    <span class="attr">listenAddress:</span> <span class="string">&quot;0.0.0.0&quot;</span> <span class="comment"># Optional, defaults to &quot;0.0.0.0&quot;</span></span><br><span class="line">    <span class="attr">protocol:</span> <span class="string">tcp</span> <span class="comment"># Optional, defaults to tcp</span></span><br></pre></td></tr></table></figure>
+
+<img src="/2020/12/08/k8s-tools-kind-knowledge/host-port-mapping-cluster.png" class="" title="宿主机端口映射">
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -855,142 +1214,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/03/python-tutorial-knowledge-one/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/03/python-tutorial-knowledge-one/" class="post-title-link" itemprop="url">函数</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020-12-03 10:16:58" itemprop="dateCreated datePublished" datetime="2020-12-03T10:16:58+08:00">2020-12-03</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-07 14:48:05" itemprop="dateModified" datetime="2020-12-07T14:48:05+08:00">2020-12-07</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>本文主要指出 Python 指南中需要关注的知识点</p>
-<h2 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h2><h3 id="参数默认值"><a href="#参数默认值" class="headerlink" title="参数默认值"></a>参数默认值</h3><p>最常见的形式是给参数定义默认值。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">ask_ok</span>(<span class="params">prompt, retries=<span class="number">4</span>, reminder=<span class="string">&#x27;Please try again!&#x27;</span></span>):</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        ok = <span class="built_in">input</span>(prompt)</span><br><span class="line">        <span class="keyword">if</span> ok <span class="keyword">in</span> (<span class="string">&#x27;y&#x27;</span>, <span class="string">&#x27;ye&#x27;</span>, <span class="string">&#x27;yes&#x27;</span>):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">if</span> ok <span class="keyword">in</span> (<span class="string">&#x27;n&#x27;</span>, <span class="string">&#x27;no&#x27;</span>, <span class="string">&#x27;nop&#x27;</span>, <span class="string">&#x27;nope&#x27;</span>):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        retries = retries - <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> retries &lt; <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&#x27;invalid user response&#x27;</span>)</span><br><span class="line">        print(reminder)</span><br></pre></td></tr></table></figure>
-
-<p>可以通过以下几种方式调用：</p>
-<ul>
-<li>只传强制性参数： ask_ok(‘Do you really want to quit?’)</li>
-<li>传一个可选参数： ask_ok(‘Do you really want to quit?’, 2)</li>
-<li>传所有参数： ask_ok(‘Do you really want to quit?’, 2， ‘Common on, only yes or no!’)</li>
-</ul>
-<p><strong>注意</strong>：函数默认值在函数定义时就已经被评估。因此，函数定义之后再修改默认值并不会生效。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">i = <span class="number">5</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">f</span>(<span class="params">arg=i</span>):</span></span><br><span class="line">    print(arg)</span><br><span class="line"></span><br><span class="line">i = <span class="number">6</span></span><br><span class="line">f()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出结果为：5</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>注意</strong>：默认值只会被评估一次。但是当默认值是一个可变对象，比如列表,字典，或者大多数类的实例时，会有所不同。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">f</span>(<span class="params">a, L=[]</span>):</span></span><br><span class="line">    L.append(a)</span><br><span class="line">    <span class="keyword">return</span> L</span><br><span class="line"></span><br><span class="line">print(f(<span class="number">1</span>))</span><br><span class="line">print(f(<span class="number">2</span>))</span><br><span class="line">print(f(<span class="number">3</span>))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出结果为</span></span><br><span class="line"><span class="comment"># [1]</span></span><br><span class="line"><span class="comment"># [1, 2]</span></span><br><span class="line"><span class="comment"># [1, 2, 3]</span></span><br></pre></td></tr></table></figure>
-
-<p>如果不想在多次调用中共享一个默认值，可以这样定义函数：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">f</span>(<span class="params">a, L=<span class="literal">None</span></span>):</span></span><br><span class="line">    <span class="keyword">if</span> L <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        L = []</span><br><span class="line">    L.append(a)</span><br><span class="line">    <span class="keyword">return</span> L</span><br></pre></td></tr></table></figure>
-
-<h3 id="关键字参数"><a href="#关键字参数" class="headerlink" title="关键字参数"></a>关键字参数</h3><p>函数可以使用 kwarg=value 形式的关键字参数调用。例如，下面的方法：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">parrot</span>(<span class="params">voltage, state=<span class="string">&#x27;a stiff&#x27;</span>, action=<span class="string">&#x27;voom&#x27;</span>, <span class="built_in">type</span>=<span class="string">&#x27;Norwegian Blue&#x27;</span></span>):</span></span><br><span class="line">    print(<span class="string">&quot;-- This parrot wouldn&#x27;t&quot;</span>, action. end=<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">    print(<span class="string">&quot;if you put&quot;</span>, voltage, <span class="string">&quot;volts through it.&quot;</span>)</span><br><span class="line">    print(<span class="string">&quot;-- Lovely plumage the&quot;</span>, <span class="built_in">type</span>)</span><br><span class="line">    print(<span class="string">&quot;-- It&#x27;s state&quot;</span>, state, <span class="string">&quot;!&quot;</span>)</span><br></pre></td></tr></table></figure>
-
-<p>接受一个必填参数（voltage）和三个可选参数（state， action， type），可以使用几种方式调用：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">parrot(<span class="number">1000</span>)</span><br><span class="line">parrot(voltage=<span class="number">1000</span>)</span><br><span class="line">parrot(voltage=<span class="number">1000</span>, action=<span class="string">&#x27;VOOOOOOOM&#x27;</span>)</span><br><span class="line">parrot(action=<span class="string">&#x27;VOOOOOOOM&#x27;</span>, voltage=<span class="number">1000</span>)</span><br><span class="line">parrot(<span class="string">&#x27;a million&#x27;</span>, <span class="string">&#x27;bereft of live&#x27;</span>, <span class="string">&#x27;jump&#x27;</span>)</span><br><span class="line">parrot(<span class="string">&#x27;a thousand&#x27;</span>, state=<span class="string">&#x27;pushing up to daisies&#x27;</span>)</span><br></pre></td></tr></table></figure>
-
-<p>但是以下调用方式是错误的：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">parrot()                    <span class="comment"># 必填参数缺失</span></span><br><span class="line">parrot(voltage=<span class="number">5.0</span>, <span class="string">&#x27;dead&#x27;</span>) <span class="comment"># 非关键字参数在关键字参数之后</span></span><br><span class="line">parrot(<span class="number">110</span>, voltage=<span class="number">220</span>)    <span class="comment"># 同一个参数多个值</span></span><br><span class="line">parrot(actor=<span class="string">&#x27;John Cleese&#x27;</span>) <span class="comment"># 无效的关键字参数</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="任意参数列表"><a href="#任意参数列表" class="headerlink" title="任意参数列表"></a>任意参数列表</h3><p>最不常用的选项是可以使用任意数量的参数调用函数。这些参数会被包含在一个元组里。在可变数量的参数之前，可能会出现<strong>零个</strong>或<strong>多个</strong>普通参数。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">write_multiple_items</span>(<span class="params">file, separator, *args</span>):</span></span><br><span class="line">    file.write(separator.join(args))</span><br></pre></td></tr></table></figure>
-
-<p>一般来说，这些 可变参数 将在形式参数列表的末尾，因为它们收集传递给函数的所有剩余输入参数。出现在 *args 参数之后的任何形式参数都是 ‘仅关键字参数’，也就是说它们只能作为关键字参数而不能是位置参数。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">concat</span>(<span class="params">*args, sep=<span class="string">&quot;/&quot;</span></span>):</span></span><br><span class="line">    <span class="keyword">return</span> sep.join(args)</span><br><span class="line"></span><br><span class="line">concat(<span class="string">&quot;earth&quot;</span>, <span class="string">&quot;mars&quot;</span>, <span class="string">&quot;venus&quot;</span>)</span><br><span class="line"><span class="comment"># &#x27;earth/mars/venus&#x27;</span></span><br><span class="line"></span><br><span class="line">concat(<span class="string">&quot;earth&quot;</span>, <span class="string">&quot;mars&quot;</span>, <span class="string">&quot;venus&quot;</span>, sep=<span class="string">&quot;.&quot;</span>)</span><br><span class="line"><span class="comment"># &#x27;earth.mars.venus&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="解包参数列表"><a href="#解包参数列表" class="headerlink" title="解包参数列表"></a>解包参数列表</h3><p>当参数已经在列表或元组中但需要为需要单独位置参数的函数调用解包时，会发生相反的情况。例如，内置的 range() 函数需要单独的 start 和 stop 参数。如果它们不能单独使用，请使用 * 运算符编写函数调用以从列表或元组中解包参数:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">list</span>(<span class="built_in">range</span>(<span class="number">3</span>, <span class="number">6</span>))            <span class="comment"># normal call with separate arguments</span></span><br><span class="line"><span class="comment"># [3, 4, 5]</span></span><br><span class="line"></span><br><span class="line">args = [<span class="number">3</span>, <span class="number">6</span>]</span><br><span class="line"><span class="built_in">list</span>(<span class="built_in">range</span>(*args))            <span class="comment"># call with arguments unpacked from a list</span></span><br><span class="line"><span class="comment"># [3, 4, 5]</span></span><br></pre></td></tr></table></figure>
-
-<p>以同样的方式，字典可以使用 ** 运算符来提供关键字参数:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">parrot</span>(<span class="params">voltage, state=<span class="string">&#x27;a stiff&#x27;</span>, action=<span class="string">&#x27;voom&#x27;</span></span>):</span></span><br><span class="line">    print(<span class="string">&quot;-- This parrot wouldn&#x27;t&quot;</span>, action, end=<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">    print(<span class="string">&quot;if you put&quot;</span>, voltage, <span class="string">&quot;volts through it.&quot;</span>, end=<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">    print(<span class="string">&quot;E&#x27;s&quot;</span>, state, <span class="string">&quot;!&quot;</span>)</span><br><span class="line"></span><br><span class="line">d = &#123;<span class="string">&quot;voltage&quot;</span>: <span class="string">&quot;four million&quot;</span>, <span class="string">&quot;state&quot;</span>: <span class="string">&quot;bleedin&#x27; demised&quot;</span>, <span class="string">&quot;action&quot;</span>: <span class="string">&quot;VOOM&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line">parrot(**d)</span><br><span class="line"><span class="comment"># -- This parrot wouldn&#x27;t VOOM if you put four million volts through it. E&#x27;s bleedin&#x27; demised !</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Lambda-表达式"><a href="#Lambda-表达式" class="headerlink" title="Lambda 表达式"></a>Lambda 表达式</h3><p>可以用 lambda 关键字来创建一个小的匿名函数。这个函数返回两个参数的和： lambda a, b: a+b 。Lambda 函数可以在需要函数对象的任何地方使用。它们在语法上限于单个表达式。从语义上来说，它们只是正常函数定义的语法糖。与嵌套函数定义一样，lambda 函数可以引用所包含域的变量:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_incrementor</span>(<span class="params">n</span>):</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">lambda</span> x: x + n</span><br><span class="line"></span><br><span class="line">f = make_incrementor(<span class="number">42</span>)</span><br><span class="line">print(f(<span class="number">0</span>))</span><br><span class="line"><span class="comment"># 42</span></span><br><span class="line">print(f(<span class="number">1</span>))</span><br><span class="line"><span class="comment"># 43</span></span><br></pre></td></tr></table></figure>
-
-<p>上面的例子使用一个 lambda 表达式来返回一个函数。另一个用法是传递一个小函数作为参数:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pairs = [(<span class="number">1</span>, <span class="string">&#x27;one&#x27;</span>), (<span class="number">2</span>, <span class="string">&#x27;two&#x27;</span>), (<span class="number">3</span>, <span class="string">&#x27;three&#x27;</span>), (<span class="number">4</span>, <span class="string">&#x27;four&#x27;</span>)]</span><br><span class="line">pairs.sort(key=<span class="keyword">lambda</span> pair: pair[<span class="number">1</span>])</span><br><span class="line"></span><br><span class="line">print(pairs)</span><br><span class="line"><span class="comment"># [(4, &#x27;four&#x27;), (1, &#x27;one&#x27;), (3, &#x27;three&#x27;), (2, &#x27;two&#x27;)]</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="生成器函数"><a href="#生成器函数" class="headerlink" title="生成器函数"></a>生成器函数</h2><p>一个使用 yield 语句的函数或方法被称作一个生成器函数。这样的函数在被调用时，总是返回一个可以执行函数体的<strong>迭代器</strong>对象。调用该迭代器的<strong>iterator.**next</strong>()**方法将会导致这个函数一直运行直到它使用 yield 语句提供了一个值为止。 当这个函数执行 return 语句或者执行到末尾时，将引发 StopIteration 异常并且这个迭代器将到达所返回的值集合的末尾。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">reverse</span>(<span class="params">data</span>):</span></span><br><span class="line">    <span class="keyword">for</span> index <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(data)-<span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>):</span><br><span class="line">        <span class="keyword">yield</span> data[index]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> d <span class="keyword">in</span> reverse(<span class="string">&quot;abcd&quot;</span>):</span><br><span class="line">    print(d)</span><br></pre></td></tr></table></figure>
-
-<h2 id="协程函数"><a href="#协程函数" class="headerlink" title="协程函数"></a>协程函数</h2><p>使用 async def 来定义的函数或方法就被称为协程函数。这样的函数在被调用时会返回一个协程（coroutine）对象。它可能包含 await 表达式以及 async with 和 async for 语句。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">coroutine_1</span>():</span></span><br><span class="line">    print(<span class="string">&#x27;coroutine_1 is active on the event loop&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    print(<span class="string">&#x27;coroutine_1 yielding control. Going to be blocked for 4 seconds.&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> asyncio.sleep(<span class="number">4</span>)</span><br><span class="line"></span><br><span class="line">    print(<span class="string">&#x27;coroutine_1 resumed. coroutine_1 exiting&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">def</span> <span class="title">coroutine_2</span>():</span></span><br><span class="line">    print(<span class="string">&#x27;coroutine_2 is active on the event loop&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    print(<span class="string">&#x27;coroutine_2 yielding control. Going to be blocked for 5 seconds.&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> asyncio.sleep(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">    print(<span class="string">&#x27;coroutine_2 resumed. coroutine_2s exiting&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">loop = asyncio.get_event_loop()</span><br><span class="line"></span><br><span class="line">loop.run_until_complete(asyncio.gather(coroutine_1(), coroutine_2()))</span><br><span class="line"></span><br><span class="line">print(<span class="string">&#x27;all coroutine done, do something next&#x27;</span>)</span><br></pre></td></tr></table></figure>
-
-<h3 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h3><ul>
-<li>协程比线程、进程处理 Network IO 要高效的多。适用于 Network IO 密集型任务。</li>
-</ul>
-<h2 id="异步生成器函数"><a href="#异步生成器函数" class="headerlink" title="异步生成器函数"></a>异步生成器函数</h2><h2 id="内置函数"><a href="#内置函数" class="headerlink" title="内置函数"></a>内置函数</h2>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
