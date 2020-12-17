@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="K8s 通过将容器放置到 Pods 中以在 Nodes 上运行来运行工作负载。节点可以是虚拟机或者物理机，取决于集群。每个节点都有包含有控制层管理的运行 Pods 的必要服务。 集群通常有几个节点，在学习环境或者资源有限，也可以只有一个节点。 节点上的组件包括 kubelet, container runtime 和 kube-proxy。 管理有两种主要方法可以将节点添加到 API server">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-集群架构-节点">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/14/k8s-cluster-architecture-nodes/index.html">
+<meta property="og:site_name" content="浅秋之枫">
+<meta property="og:description" content="K8s 通过将容器放置到 Pods 中以在 Nodes 上运行来运行工作负载。节点可以是虚拟机或者物理机，取决于集群。每个节点都有包含有控制层管理的运行 Pods 的必要服务。 集群通常有几个节点，在学习环境或者资源有限，也可以只有一个节点。 节点上的组件包括 kubelet, container runtime 和 kube-proxy。 管理有两种主要方法可以将节点添加到 API server">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-14T03:44:04.000Z">
+<meta property="article:modified_time" content="2020-12-17T05:04:49.429Z">
+<meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="cluster">
+<meta property="article:tag" content="architecture">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/14/k8s-cluster-architecture-nodes/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>k8s-集群架构-节点 | 浅秋之枫</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">浅秋之枫</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E8%87%AA%E5%8A%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.1.</span> <span class="nav-text">节点自动注册</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%BA%E5%B7%A5%E8%8A%82%E7%82%B9%E7%AE%A1%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">人工节点管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E7%8A%B6%E6%80%81"><span class="nav-number">3.</span> <span class="nav-text">节点状态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Address"><span class="nav-number">3.1.</span> <span class="nav-text">Address</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Conditions"><span class="nav-number">3.2.</span> <span class="nav-text">Conditions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-and-Allocatable"><span class="nav-number">3.3.</span> <span class="nav-text">Capacity and Allocatable</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#info"><span class="nav-number">3.4.</span> <span class="nav-text">info</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Node-controller"><span class="nav-number">3.5.</span> <span class="nav-text">Node controller</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Heartbeats"><span class="nav-number">3.6.</span> <span class="nav-text">Heartbeats</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reliability"><span class="nav-number">3.7.</span> <span class="nav-text">Reliability</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Node-capacity"><span class="nav-number">3.8.</span> <span class="nav-text">Node capacity</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">浅秋之枫</p>
+  <div class="site-description" itemprop="description">随堂笔记</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/14/k8s-cluster-architecture-nodes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-集群架构-节点
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-14 11:44:04" itemprop="dateCreated datePublished" datetime="2020-12-14T11:44:04+08:00">2020-12-14</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-17 13:04:49" itemprop="dateModified" datetime="2020-12-17T13:04:49+08:00">2020-12-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>K8s 通过将容器放置到 Pods 中以在 Nodes 上运行来运行工作负载。节点可以是虚拟机或者物理机，取决于集群。每个节点都有包含有控制层管理的运行 Pods 的必要服务。</p>
+<p>集群通常有几个节点，在学习环境或者资源有限，也可以只有一个节点。</p>
+<p>节点上的组件包括 kubelet, container runtime 和 kube-proxy。</p>
+<h2 id="管理"><a href="#管理" class="headerlink" title="管理"></a>管理</h2><p>有两种主要方法可以将节点添加到 API server：</p>
+<ul>
+<li>节点上的 kubelet 自动注册到控制层。</li>
+<li>用户手动添加节点对象。</li>
+</ul>
+<p>在手动创建节点对象或者节点上的 kubelet 自动注册之后，控制层将检查节点是否可用。例如，可以尝试通过以下 json 显示地创建一个节点：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">&quot;kind&quot;</span>: <span class="string">&quot;Node&quot;</span>,</span><br><span class="line">  <span class="attr">&quot;apiVersion&quot;</span>: <span class="string">&quot;v1&quot;</span>,</span><br><span class="line">  <span class="attr">&quot;metadata&quot;</span>: &#123;</span><br><span class="line">    <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;10.240.79.157&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;labels&quot;</span>: &#123;</span><br><span class="line">      <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;my-first-k8s-node&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>k8s 在内部创建一个节点对象。k8s 检查 kubelet 是否已注册到与节点的 metada.name 字段匹配的 API 服务器。如果节点是健康的（所有服务都正常运行），节点就是和运行 Pod。否则的话，节点就会被任何可用集群忽略，直到节点重新变为可用。</p>
+<p><strong>注意</strong>：</p>
+<ul>
+<li>k8s 保留不可用节点对象并且持续检查这个节点是否变为可用。</li>
+<li>管理员想要停止健康检查时，必须删除节点对象。</li>
+</ul>
+<p>节点的名字必须是一个可用的 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names#dns-subdomain-names">DNS 子域名称</a></p>
+<h3 id="节点自动注册"><a href="#节点自动注册" class="headerlink" title="节点自动注册"></a>节点自动注册</h3><p>当 kubelet 标识 –register-node 是 true 时，kubelet 将向 API server 注册自己。这是大多数发行版所使用的首选模式。</p>
+<p>对于自动注册，kubelet 使用以下选项启动：</p>
+<ul>
+<li>–kubeconfig：向 API server 验证自身的凭据路径。</li>
+<li>–cloud-provider： 如何与云提供商对话以读取关于其自身的元数据。</li>
+<li>–register-node：自动注册 API server。</li>
+<li>–register-with-taints：用给定的污染列表注册节点（逗号分割<key>=<value>:<effect>）。如果 register-node 为 false，则无操作。</li>
+<li>–node-ip： 节点的 IP 地址。</li>
+<li>–node-labels：在集群中注册节点时要添加的标签。（通过<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction">NodeRestriction admission plugin</a>查询强制执行的标签）</li>
+<li>–node-status-update-frequency：指定 kubelet 将节点状态提交给 master 的频率。</li>
+</ul>
+<p>当<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/access-authn-authz/node/">Node authorization mode</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction">NodeRestriction admission plugin</a>可用时，k8s 只被授权创建和更新节点资源。</p>
+<h2 id="人工节点管理"><a href="#人工节点管理" class="headerlink" title="人工节点管理"></a>人工节点管理</h2><p>可以通过 kubectl 创建和修改节点对象。</p>
+<p>当需要手动创建节点时，需要设置 kubelet 标识–register-node=false。</p>
+<p>无论–register-node 的设置如何，都可以修改节点对象。比如，可以给已有节点设置标签，或者将它标记为 unschedulable。</p>
+<p>可以将节点上的标签与 Pods 上的节点选择器结合使用，以控制调度。例如，可以约束一个 Pod，使其只适合在可用节点的子集上运行。</p>
+<p>将节点标记为 unschedulable 可以防止调度器将新 pods 放到该节点上，但不会影响该节点上的现有 pods。作为节点重启或其他维护之前的准备步骤，这非常有用。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 将节点标记为不可用</span></span><br><span class="line">kubectl cordon $NODENAME</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将pod驱赶到其他节点</span></span><br><span class="line">kubectl drain $NODENAME</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 解除不可调度状态</span></span><br><span class="line">kubectl uncordon $NODENAME</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>：作为守护进程的一部分的 Pods 允许在不可调度的节点上运行。DaemonSets 通常提供应该在节点上运行的节点本地服务，即使工作负载应用程序正在耗尽节点。</p>
+<h2 id="节点状态"><a href="#节点状态" class="headerlink" title="节点状态"></a>节点状态</h2><p>节点状态包括以下信息：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#addresses">Address</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#condition">Conditions</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#capacity">Capacity and Allocatable</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#info">Info</a></li>
+</ul>
+<p>可以使用 kubectl 查看节点状态和其他详情：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe node &lt;insert-node-name-here&gt;</span><br></pre></td></tr></table></figure>
+
+<p>下面描述输出的每个部分。</p>
+<h3 id="Address"><a href="#Address" class="headerlink" title="Address"></a>Address</h3><p>这些字段的使用取决于云提供商或裸机配置。</p>
+<ul>
+<li>HostName：由节点的内核报告的主机名。可以通过 kubelet –hostname-override 参数替换。</li>
+<li>ExternalIP：通常是外部可路由的节点的 IP 地址(从集群外部可用)。</li>
+<li>InternalIP：通常是仅在集群内可路由的节点的 IP 地址。</li>
+</ul>
+<h3 id="Conditions"><a href="#Conditions" class="headerlink" title="Conditions"></a>Conditions</h3><p>Conditions 属性描述所有运行节点的状态。</p>
+<table>
+<thead>
+<tr>
+<th align="left">Node Condition</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Ready</td>
+<td align="left">如果节点运行正常并准备接受 pods，则为 True;如果节点运行不正常且不接受 pods，则为 False;如果节点控制器在最后一个节点-monitor-grace-period(缺省值为 40 秒)中没有听到该节点的消息，则为 Unknown。</td>
+</tr>
+<tr>
+<td align="left">DiskPressure</td>
+<td align="left">如果磁盘大小存在压力，即磁盘容量较低，则为 True;否则 False</td>
+</tr>
+<tr>
+<td align="left">MemoryPressure</td>
+<td align="left">如果节点内存存在压力，即节点内存较低，则为 True;否则 False</td>
+</tr>
+<tr>
+<td align="left">PIDPressure</td>
+<td align="left">如果进程存在压力，即节点上有太多进程，则为 True;否则 False</td>
+</tr>
+<tr>
+<td align="left">NetworkUnavailable</td>
+<td align="left">如果节点的网络配置不正确，则为 True，否则为 False</td>
+</tr>
+</tbody></table>
+<p><strong>注意</strong>：如果使用命令行工具打印被禁节点的详细信息，条件包括 SchedulingDisabled。在 k8s API 中，SchedulingDisabled 不是一个状态;相反，被封锁的节点在其规范中被标记为 Unschedulable。</p>
+<p>节点状态表示为 JSON 对象。例如，下面的结构描述了一个健康的节点：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&quot;conditions&quot;: [</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="attr">&quot;type&quot;</span>: <span class="string">&quot;Ready&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;status&quot;</span>: <span class="string">&quot;True&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;reason&quot;</span>: <span class="string">&quot;KubeletReady&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;message&quot;</span>: <span class="string">&quot;kubelet is posting ready status&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;lastHeartbeatTime&quot;</span>: <span class="string">&quot;2019-06-05T18:38:35Z&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;lastTransitionTime&quot;</span>: <span class="string">&quot;2019-06-05T11:41:27Z&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>如果 Ready 的状态保持未知或者 False 的时间超过了 pod-eviction-timeout(kube-controller-manager 的参数)，节点上的所有 Pod 将被节点控制器安排删除。默认的收回超时持续时间是 5 分钟。在某些情况下，当节点不可访问时，API 服务器无法与节点上的 kubelet 通信。在重新建立与 API 服务器的通信之前，不能将删除 pod 的决定通知 kubelet。在此期间，计划删除的 pod 可能会继续运行。</p>
+<p>节点控制器在确认 pod 在集群中停止运行之前不会强制删除 pod。可以看到在不可到达的节点上运行的 pods 处于终止状态或未知状态。如果 k8s 无法推断出一个节点是否永久离开了一个集群，那么集群管理员可能需要手动删除节点对象。从 k8s 中删除节点对象将导致从 API 服务器中删除运行在节点上的所有 Pod 对象，并释放它们的名称。</p>
+<p>节点生命周期控制器自动创建表示条件的污点。调度程序在将 Pod 分配给节点时将节点的污点考虑在内。Pods 还可以具有允许它们容忍节点污染的容忍度。</p>
+<p>有关详细信息，请参见<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#taint-nodes-by-condition">Taint Nodes By Condition</a>。</p>
+<h3 id="Capacity-and-Allocatable"><a href="#Capacity-and-Allocatable" class="headerlink" title="Capacity and Allocatable"></a>Capacity and Allocatable</h3><p>描述节点上可用的资源:CPU、内存和可以调度到节点上的 pod 的最大数量。</p>
+<p>Capacity 字段表示一个节点所拥有的资源总量。Allocatable 表示一个节点上可被普通 pod 消耗的资源量。</p>
+<p>在学习如何在节点上<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable">保留计算资源</a>时，您可以阅读更多关于容量和可分配资源的信息。</p>
+<h3 id="info"><a href="#info" class="headerlink" title="info"></a>info</h3><p>描述关于节点的一般信息，如内核版本、k8s 版本(kubelet 和 kube-proxy 版本)、Docker 版本(如果使用)和 OS 名称。该信息由 Kubelet 从节点收集。</p>
+<h3 id="Node-controller"><a href="#Node-controller" class="headerlink" title="Node controller"></a>Node controller</h3><p>节点控制器是一个 k8s 控制层组件，它管理节点的各个方面。</p>
+<p>节点控制器在节点的生命周期中有多种角色。第一种是在注册节点时给节点分配一个 CIDR 块(如果 CIDR 分配打开了)。</p>
+<p>第二种方法是使节点控制器的内部节点列表与云提供商的可用机器列表保持最新。当在云环境中运行时，只要某个节点不健康，节点控制器就会询问云提供商该节点的 VM 是否仍然可用。否则，节点控制器将从其节点列表中删除该节点。</p>
+<p>第三个是监视节点的健康状况。当一个节点成为不可用时（即节点控制器停止接收心跳出于某些原因，例如由于节点宕机），节点控制器负责更新 NodeReady 的节点状态到 ConditionUnknown(,),然后如果节点仍然是不可用，那么会将节点上所有的 Pods 驱逐(使用优美的终止)。(默认超时是 40s 开始报告 ConditionUnknown, 5m 之后开始驱逐 pod。)节点控制器在节点监视器周期内检查每个节点的状态。</p>
+<h3 id="Heartbeats"><a href="#Heartbeats" class="headerlink" title="Heartbeats"></a>Heartbeats</h3><p>由 k8s 节点发送的心跳帮助确定节点的可用性。</p>
+<p>心跳有两种形式:NodeStatus 和 Lease 对象的更新。每个节点在 kube-node-lease 名称空间中都有一个相关联的 Lease 对象。Lease 是一种轻量级资源，它可以随着集群的扩展提高节点心跳的性能。</p>
+<p>kubelet 负责创建和更新 NodeStatus 和 Lease 对象：</p>
+<ul>
+<li><p>kubelet 在状态发生变化时更新节点状态，或者在配置的时间间隔内没有更新。NodeStatus 更新的默认间隔是 5 分钟(远远长于无法到达节点的 40 秒默认超时)。</p>
+</li>
+<li><p>kubelet 每 10 秒创建并更新其租赁对象(默认的更新间隔)。租约更新独立于节点状态更新发生。如果租约更新失败，kubelet 将以指数回退的方式重试，起始时间为 200 毫秒，上限为 7 秒。</p>
+</li>
+</ul>
+<h3 id="Reliability"><a href="#Reliability" class="headerlink" title="Reliability"></a>Reliability</h3><p>在大多数情况下，节点控制器将回收速率限制为——节点回收速率(默认值为 0.1)每秒，这意味着它每 10 秒不会从超过 1 个节点中回收 pod。</p>
+<p>当给定可用性区域中的节点变得不健康时，节点退出行为将发生变化。节点控制器同时检查区域中有多少节点是不健康的(NodeReady 状态是 ConditionUnknown 或 ConditionFalse)。如果不健康的节点的分数至少–unhealthy-zone-threshold (默认 0.55)然后驱逐率是减少:如果集群很小(即小于或等于–large-cluster-size-threshold 节点默认 50)驱逐就停止,否则驱逐率降低到–secondary-node-eviction-rate (默认 0.01)每秒。每个可用性区域实现这些策略的原因是，一个可用性区域可能与主可用性区域分离，而其他可用性区域保持连接。如果您的集群没有跨越多个云提供商可用性区域，那么就只有一个可用性区域(整个集群)。</p>
+<p>将节点分布到多个可用性区域的一个关键原因是，这样当整个区域出现故障时，可以将工作负载转移到健康区域。因此，如果一个区域中的所有节点都不健康，那么节点控制器将以正常的节点驱逐率(node-eviction-rate)进行驱逐。最极端的情况是所有区域都完全不健康(即集群中没有健康节点)。在这种情况下，节点控制器假定主连接有问题，并停止所有收回操作，直到恢复某些连接为止。</p>
+<p>节点控制器还负责清除运行在带有 NoExecute 污染的节点上的 pod，除非这些 pod 容忍这种污染。节点控制器还添加了与节点问题(如节点不可用或未就绪)相对应的污点。这意味着调度器不会将 pod 放置到不健康的节点上。</p>
+<p><strong>警告</strong>：kubectl cordon 将一个节点标记为’unschedulable’，这样做的副作用是服务控制器从任何负载均衡器节点目标列表中删除该节点，它以前是合格的，有效地从被封锁的节点中删除传入的负载均衡器流量。</p>
+<h3 id="Node-capacity"><a href="#Node-capacity" class="headerlink" title="Node capacity"></a>Node capacity</h3><p>节点对象跟踪关于节点资源容量的信息(例如:可用内存量和 cpu 数量)。自我注册的节点在注册期间报告它们的容量。如果手动添加节点，则需要在添加节点时设置节点的容量信息。</p>
+<p>k8s 调度程序确保一个节点上有足够的资源供所有 pod 使用。调度程序检查该节点上容器请求的总和是否大于该节点的容量。请求的总和包括 kubelet 管理的所有容器，但不包括直接由容器运行时启动的任何容器，也不包括在 kubelet 控制之外运行的任何进程。</p>
+<p><strong>注意</strong>：如果希望显式地为非pod进程保留资源，请参阅<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#system-reserved">系统守护进程的保留资源</a>。<br>`</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/cluster/" rel="tag"># cluster</a>
+              <a href="/tags/architecture/" rel="tag"># architecture</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/11/k8s-objects-field-selector/" rel="prev" title="k8s-对象属性选择器">
+                  <i class="fa fa-chevron-left"></i> k8s-对象属性选择器
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">浅秋之枫</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>

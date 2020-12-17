@@ -23,22 +23,22 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="对象对象 是 Python 中对数据的抽象。 Python 程序中的所有数据都是由对象或对象间关系来表示的。 （从某种意义上说，按照冯·诺依曼的“存储程序计算机”模型，代码本身也是由对象来表示的。） 每个对象都有各自的编号、类型和值。一个对象被创建后，它的 编号 就绝不会改变；你可以将其理解为该对象在内存中的地址。 ‘is’ 运算符可以比较两个对象的编号是否相同；id() 函数能返回一个代表其编号">
+<meta name="description" content="属性选择器允许基于一个或多个资源属性获取k8s资源。属性请求的示例：  metadata.name&#x3D;my-service metadata.namespace!&#x3D;default status.phase&#x3D;Pending  使用kubectl命令查询所有status.phase属性值为Running的Pods: 1kubectl get pods --field-selector status.ph">
 <meta property="og:type" content="article">
-<meta property="og:title" content="数据类型">
-<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/04/python-tutorial-knowledge-four/index.html">
+<meta property="og:title" content="k8s-对象属性选择器">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/11/k8s-objects-field-selector/index.html">
 <meta property="og:site_name" content="浅秋之枫">
-<meta property="og:description" content="对象对象 是 Python 中对数据的抽象。 Python 程序中的所有数据都是由对象或对象间关系来表示的。 （从某种意义上说，按照冯·诺依曼的“存储程序计算机”模型，代码本身也是由对象来表示的。） 每个对象都有各自的编号、类型和值。一个对象被创建后，它的 编号 就绝不会改变；你可以将其理解为该对象在内存中的地址。 ‘is’ 运算符可以比较两个对象的编号是否相同；id() 函数能返回一个代表其编号">
+<meta property="og:description" content="属性选择器允许基于一个或多个资源属性获取k8s资源。属性请求的示例：  metadata.name&#x3D;my-service metadata.namespace!&#x3D;default status.phase&#x3D;Pending  使用kubectl命令查询所有status.phase属性值为Running的Pods: 1kubectl get pods --field-selector status.ph">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-12-04T05:22:27.000Z">
-<meta property="article:modified_time" content="2020-12-07T08:05:29.621Z">
+<meta property="article:published_time" content="2020-12-11T09:08:43.000Z">
+<meta property="article:modified_time" content="2020-12-14T03:41:39.282Z">
 <meta property="article:author" content="浅秋之枫">
-<meta property="article:tag" content="python">
-<meta property="article:tag" content="doc">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="object">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/04/python-tutorial-knowledge-four/">
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/11/k8s-objects-field-selector/">
 
 
 <script class="page-configurations">
@@ -50,7 +50,7 @@
     lang   : 'zh-CN'
   };
 </script>
-<title>数据类型 | 浅秋之枫</title>
+<title>k8s-对象属性选择器 | 浅秋之枫</title>
   
 
 
@@ -148,7 +148,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <section class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.</span> <span class="nav-text">对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E7%BD%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">内置类型</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%AF%E6%8C%81%E7%9A%84%E5%B1%9E%E6%80%A7"><span class="nav-number">1.</span> <span class="nav-text">支持的属性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%AF%E6%8C%81%E7%9A%84%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">2.</span> <span class="nav-text">支持的运算符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%84%E5%90%88%E9%80%89%E6%8B%A9%E5%99%A8"><span class="nav-number">3.</span> <span class="nav-text">组合选择器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E4%B8%AA%E8%B5%84%E6%BA%90%E7%B1%BB%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">多个资源类型</span></a></li></ol></div>
         </section>
         <!--/noindex-->
 
@@ -209,7 +209,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/04/python-tutorial-knowledge-four/">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/11/k8s-objects-field-selector/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -222,7 +222,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          数据类型
+          k8s-对象属性选择器
         </h1>
 
         <div class="post-meta-container">
@@ -233,14 +233,14 @@
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2020-12-04 13:22:27" itemprop="dateCreated datePublished" datetime="2020-12-04T13:22:27+08:00">2020-12-04</time>
+      <time title="创建时间：2020-12-11 17:08:43" itemprop="dateCreated datePublished" datetime="2020-12-11T17:08:43+08:00">2020-12-11</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-07 16:05:29" itemprop="dateModified" datetime="2020-12-07T16:05:29+08:00">2020-12-07</time>
+        <time title="修改时间：2020-12-14 11:41:39" itemprop="dateModified" datetime="2020-12-14T11:41:39+08:00">2020-12-14</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -248,7 +248,7 @@
       </span>
       <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
         </span>
     </span>
 
@@ -262,10 +262,30 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h2><p>对象 是 Python 中对数据的抽象。 Python 程序中的所有数据都是由对象或对象间关系来表示的。 （从某种意义上说，按照冯·诺依曼的“存储程序计算机”模型，代码本身也是由对象来表示的。）</p>
-<p>每个对象都有各自的编号、类型和值。一个对象被创建后，它的 编号 就绝不会改变；你可以将其理解为该对象在内存中的地址。 ‘is’ 运算符可以比较两个对象的编号是否相同；id() 函数能返回一个代表其编号的整型数。</p>
-<p>有些对象的<strong>值</strong>可以改变。值可以改变的对象被称为<strong>可变的</strong>；值不可以改变的对象就被称为<strong>不可变的</strong>。(一个不可变容器对象如果包含对可变对象的引用，当后者的值改变时，前者的值也会改变；但是该容器仍属于不可变对象，因为它所包含的对象集是不会改变的。因此，不可变并不严格等同于值不能改变，实际含义要更微妙。) 一个对象的可变性是由其类型决定的；例如，数字、字符串和元组是不可变的，而字典和列表是可变的。</p>
-<h2 id="内置类型"><a href="#内置类型" class="headerlink" title="内置类型"></a>内置类型</h2>
+        <p>属性选择器允许基于一个或多个资源属性获取k8s资源。属性请求的示例：</p>
+<ul>
+<li>metadata.name=my-service</li>
+<li>metadata.namespace!=default</li>
+<li>status.phase=Pending</li>
+</ul>
+<p>使用kubectl命令查询所有status.phase属性值为Running的Pods:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --field-selector status.phase=Running</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>: 属性选择器本质上是资源过滤器。默认情况下，没有使用选择器或者过滤器，意味着指定类型的所有资源都会被选中。</p>
+<h2 id="支持的属性"><a href="#支持的属性" class="headerlink" title="支持的属性"></a>支持的属性</h2><p>受支持的字段选择器因k8s资源类型而异。所有资源类型都支持metadata.name和metadata.namespace字段。使用不支持的字段选择器会产生错误。例如:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get ingress --field-selector foo.bar=baz</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Error from server (BadRequest): Unable to find &quot;ingresses&quot; that match label selector &quot;&quot;, field selector &quot;foo.bar=baz&quot;: &quot;foo.bar&quot; is not a known field selector: only &quot;metadata.name&quot;, &quot;metadata.namespace&quot;</span><br></pre></td></tr></table></figure>
+
+<h2 id="支持的运算符"><a href="#支持的运算符" class="headerlink" title="支持的运算符"></a>支持的运算符</h2><p>可以在字段选择器中使用=、==和!=操作符(=和==意思相同)。例如，这个kubectl命令选择不在默认名称空间中的所有K8s服务</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get services  --all-namespaces --field-selector metadata.namespace!=default</span><br></pre></td></tr></table></figure>
+
+<h2 id="组合选择器"><a href="#组合选择器" class="headerlink" title="组合选择器"></a>组合选择器</h2><p>与标签和其他选择器一样，属性选择器可以作为逗号分隔的列表组合在一起。这个kubectl命令选择状态为其的所有Pods(status.phase不等于Running，spec.restartPolicy等于Always）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --field-selector=status.phase!=Running,spec.restartPolicy=Always</span><br></pre></td></tr></table></figure>
+
+<h2 id="多个资源类型"><a href="#多个资源类型" class="headerlink" title="多个资源类型"></a>多个资源类型</h2><p>可以跨多个资源类型使用属性选择器。这个kubectl命令选择不在default命名空间中的所有Statefulsets和Services</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default</span><br></pre></td></tr></table></figure>
+
     </div>
 
     
@@ -274,21 +294,21 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/python/" rel="tag"># python</a>
-              <a href="/tags/doc/" rel="tag"># doc</a>
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/object/" rel="tag"># object</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2020/12/04/python-tutorial-knowledge-three/" rel="prev" title="迭代器和生成器">
-                  <i class="fa fa-chevron-left"></i> 迭代器和生成器
+                <a href="/2020/12/11/k8s-objects-annotation/" rel="prev" title="k8s-对象注释">
+                  <i class="fa fa-chevron-left"></i> k8s-对象注释
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2020/12/06/python-module-itertools-knowledge/" rel="next" title="内置模块-itertools">
-                  内置模块-itertools <i class="fa fa-chevron-right"></i>
+                <a href="/2020/12/14/k8s-cluster-architecture-nodes/" rel="next" title="k8s-集群架构-节点">
+                  k8s-集群架构-节点 <i class="fa fa-chevron-right"></i>
                 </a>
             </div>
           </div>

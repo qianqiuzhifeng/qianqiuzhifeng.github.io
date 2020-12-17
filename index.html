@@ -156,7 +156,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-count">23</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -165,7 +165,7 @@
         <span class="site-state-item-name">分类</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -194,6 +194,304 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/14/k8s-cluster-architecture-nodes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/14/k8s-cluster-architecture-nodes/" class="post-title-link" itemprop="url">k8s-集群架构-节点</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-14 11:44:04" itemprop="dateCreated datePublished" datetime="2020-12-14T11:44:04+08:00">2020-12-14</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-17 13:04:49" itemprop="dateModified" datetime="2020-12-17T13:04:49+08:00">2020-12-17</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>K8s 通过将容器放置到 Pods 中以在 Nodes 上运行来运行工作负载。节点可以是虚拟机或者物理机，取决于集群。每个节点都有包含有控制层管理的运行 Pods 的必要服务。</p>
+<p>集群通常有几个节点，在学习环境或者资源有限，也可以只有一个节点。</p>
+<p>节点上的组件包括 kubelet, container runtime 和 kube-proxy。</p>
+<h2 id="管理"><a href="#管理" class="headerlink" title="管理"></a>管理</h2><p>有两种主要方法可以将节点添加到 API server：</p>
+<ul>
+<li>节点上的 kubelet 自动注册到控制层。</li>
+<li>用户手动添加节点对象。</li>
+</ul>
+<p>在手动创建节点对象或者节点上的 kubelet 自动注册之后，控制层将检查节点是否可用。例如，可以尝试通过以下 json 显示地创建一个节点：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">&quot;kind&quot;</span>: <span class="string">&quot;Node&quot;</span>,</span><br><span class="line">  <span class="attr">&quot;apiVersion&quot;</span>: <span class="string">&quot;v1&quot;</span>,</span><br><span class="line">  <span class="attr">&quot;metadata&quot;</span>: &#123;</span><br><span class="line">    <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;10.240.79.157&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;labels&quot;</span>: &#123;</span><br><span class="line">      <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;my-first-k8s-node&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>k8s 在内部创建一个节点对象。k8s 检查 kubelet 是否已注册到与节点的 metada.name 字段匹配的 API 服务器。如果节点是健康的（所有服务都正常运行），节点就是和运行 Pod。否则的话，节点就会被任何可用集群忽略，直到节点重新变为可用。</p>
+<p><strong>注意</strong>：</p>
+<ul>
+<li>k8s 保留不可用节点对象并且持续检查这个节点是否变为可用。</li>
+<li>管理员想要停止健康检查时，必须删除节点对象。</li>
+</ul>
+<p>节点的名字必须是一个可用的 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names#dns-subdomain-names">DNS 子域名称</a></p>
+<h3 id="节点自动注册"><a href="#节点自动注册" class="headerlink" title="节点自动注册"></a>节点自动注册</h3><p>当 kubelet 标识 –register-node 是 true 时，kubelet 将向 API server 注册自己。这是大多数发行版所使用的首选模式。</p>
+<p>对于自动注册，kubelet 使用以下选项启动：</p>
+<ul>
+<li>–kubeconfig：向 API server 验证自身的凭据路径。</li>
+<li>–cloud-provider： 如何与云提供商对话以读取关于其自身的元数据。</li>
+<li>–register-node：自动注册 API server。</li>
+<li>–register-with-taints：用给定的污染列表注册节点（逗号分割<key>=<value>:<effect>）。如果 register-node 为 false，则无操作。</li>
+<li>–node-ip： 节点的 IP 地址。</li>
+<li>–node-labels：在集群中注册节点时要添加的标签。（通过<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction">NodeRestriction admission plugin</a>查询强制执行的标签）</li>
+<li>–node-status-update-frequency：指定 kubelet 将节点状态提交给 master 的频率。</li>
+</ul>
+<p>当<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/access-authn-authz/node/">Node authorization mode</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction">NodeRestriction admission plugin</a>可用时，k8s 只被授权创建和更新节点资源。</p>
+<h2 id="人工节点管理"><a href="#人工节点管理" class="headerlink" title="人工节点管理"></a>人工节点管理</h2><p>可以通过 kubectl 创建和修改节点对象。</p>
+<p>当需要手动创建节点时，需要设置 kubelet 标识–register-node=false。</p>
+<p>无论–register-node 的设置如何，都可以修改节点对象。比如，可以给已有节点设置标签，或者将它标记为 unschedulable。</p>
+<p>可以将节点上的标签与 Pods 上的节点选择器结合使用，以控制调度。例如，可以约束一个 Pod，使其只适合在可用节点的子集上运行。</p>
+<p>将节点标记为 unschedulable 可以防止调度器将新 pods 放到该节点上，但不会影响该节点上的现有 pods。作为节点重启或其他维护之前的准备步骤，这非常有用。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 将节点标记为不可用</span></span><br><span class="line">kubectl cordon $NODENAME</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 将pod驱赶到其他节点</span></span><br><span class="line">kubectl drain $NODENAME</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 解除不可调度状态</span></span><br><span class="line">kubectl uncordon $NODENAME</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>：作为守护进程的一部分的 Pods 允许在不可调度的节点上运行。DaemonSets 通常提供应该在节点上运行的节点本地服务，即使工作负载应用程序正在耗尽节点。</p>
+<h2 id="节点状态"><a href="#节点状态" class="headerlink" title="节点状态"></a>节点状态</h2><p>节点状态包括以下信息：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#addresses">Address</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#condition">Conditions</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#capacity">Capacity and Allocatable</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/architecture/nodes/#info">Info</a></li>
+</ul>
+<p>可以使用 kubectl 查看节点状态和其他详情：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe node &lt;insert-node-name-here&gt;</span><br></pre></td></tr></table></figure>
+
+<p>下面描述输出的每个部分。</p>
+<h3 id="Address"><a href="#Address" class="headerlink" title="Address"></a>Address</h3><p>这些字段的使用取决于云提供商或裸机配置。</p>
+<ul>
+<li>HostName：由节点的内核报告的主机名。可以通过 kubelet –hostname-override 参数替换。</li>
+<li>ExternalIP：通常是外部可路由的节点的 IP 地址(从集群外部可用)。</li>
+<li>InternalIP：通常是仅在集群内可路由的节点的 IP 地址。</li>
+</ul>
+<h3 id="Conditions"><a href="#Conditions" class="headerlink" title="Conditions"></a>Conditions</h3><p>Conditions 属性描述所有运行节点的状态。</p>
+<table>
+<thead>
+<tr>
+<th align="left">Node Condition</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Ready</td>
+<td align="left">如果节点运行正常并准备接受 pods，则为 True;如果节点运行不正常且不接受 pods，则为 False;如果节点控制器在最后一个节点-monitor-grace-period(缺省值为 40 秒)中没有听到该节点的消息，则为 Unknown。</td>
+</tr>
+<tr>
+<td align="left">DiskPressure</td>
+<td align="left">如果磁盘大小存在压力，即磁盘容量较低，则为 True;否则 False</td>
+</tr>
+<tr>
+<td align="left">MemoryPressure</td>
+<td align="left">如果节点内存存在压力，即节点内存较低，则为 True;否则 False</td>
+</tr>
+<tr>
+<td align="left">PIDPressure</td>
+<td align="left">如果进程存在压力，即节点上有太多进程，则为 True;否则 False</td>
+</tr>
+<tr>
+<td align="left">NetworkUnavailable</td>
+<td align="left">如果节点的网络配置不正确，则为 True，否则为 False</td>
+</tr>
+</tbody></table>
+<p><strong>注意</strong>：如果使用命令行工具打印被禁节点的详细信息，条件包括 SchedulingDisabled。在 k8s API 中，SchedulingDisabled 不是一个状态;相反，被封锁的节点在其规范中被标记为 Unschedulable。</p>
+<p>节点状态表示为 JSON 对象。例如，下面的结构描述了一个健康的节点：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&quot;conditions&quot;: [</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="attr">&quot;type&quot;</span>: <span class="string">&quot;Ready&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;status&quot;</span>: <span class="string">&quot;True&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;reason&quot;</span>: <span class="string">&quot;KubeletReady&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;message&quot;</span>: <span class="string">&quot;kubelet is posting ready status&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;lastHeartbeatTime&quot;</span>: <span class="string">&quot;2019-06-05T18:38:35Z&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;lastTransitionTime&quot;</span>: <span class="string">&quot;2019-06-05T11:41:27Z&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>如果 Ready 的状态保持未知或者 False 的时间超过了 pod-eviction-timeout(kube-controller-manager 的参数)，节点上的所有 Pod 将被节点控制器安排删除。默认的收回超时持续时间是 5 分钟。在某些情况下，当节点不可访问时，API 服务器无法与节点上的 kubelet 通信。在重新建立与 API 服务器的通信之前，不能将删除 pod 的决定通知 kubelet。在此期间，计划删除的 pod 可能会继续运行。</p>
+<p>节点控制器在确认 pod 在集群中停止运行之前不会强制删除 pod。可以看到在不可到达的节点上运行的 pods 处于终止状态或未知状态。如果 k8s 无法推断出一个节点是否永久离开了一个集群，那么集群管理员可能需要手动删除节点对象。从 k8s 中删除节点对象将导致从 API 服务器中删除运行在节点上的所有 Pod 对象，并释放它们的名称。</p>
+<p>节点生命周期控制器自动创建表示条件的污点。调度程序在将 Pod 分配给节点时将节点的污点考虑在内。Pods 还可以具有允许它们容忍节点污染的容忍度。</p>
+<p>有关详细信息，请参见<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#taint-nodes-by-condition">Taint Nodes By Condition</a>。</p>
+<h3 id="Capacity-and-Allocatable"><a href="#Capacity-and-Allocatable" class="headerlink" title="Capacity and Allocatable"></a>Capacity and Allocatable</h3><p>描述节点上可用的资源:CPU、内存和可以调度到节点上的 pod 的最大数量。</p>
+<p>Capacity 字段表示一个节点所拥有的资源总量。Allocatable 表示一个节点上可被普通 pod 消耗的资源量。</p>
+<p>在学习如何在节点上<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable">保留计算资源</a>时，您可以阅读更多关于容量和可分配资源的信息。</p>
+<h3 id="info"><a href="#info" class="headerlink" title="info"></a>info</h3><p>描述关于节点的一般信息，如内核版本、k8s 版本(kubelet 和 kube-proxy 版本)、Docker 版本(如果使用)和 OS 名称。该信息由 Kubelet 从节点收集。</p>
+<h3 id="Node-controller"><a href="#Node-controller" class="headerlink" title="Node controller"></a>Node controller</h3><p>节点控制器是一个 k8s 控制层组件，它管理节点的各个方面。</p>
+<p>节点控制器在节点的生命周期中有多种角色。第一种是在注册节点时给节点分配一个 CIDR 块(如果 CIDR 分配打开了)。</p>
+<p>第二种方法是使节点控制器的内部节点列表与云提供商的可用机器列表保持最新。当在云环境中运行时，只要某个节点不健康，节点控制器就会询问云提供商该节点的 VM 是否仍然可用。否则，节点控制器将从其节点列表中删除该节点。</p>
+<p>第三个是监视节点的健康状况。当一个节点成为不可用时（即节点控制器停止接收心跳出于某些原因，例如由于节点宕机），节点控制器负责更新 NodeReady 的节点状态到 ConditionUnknown(,),然后如果节点仍然是不可用，那么会将节点上所有的 Pods 驱逐(使用优美的终止)。(默认超时是 40s 开始报告 ConditionUnknown, 5m 之后开始驱逐 pod。)节点控制器在节点监视器周期内检查每个节点的状态。</p>
+<h3 id="Heartbeats"><a href="#Heartbeats" class="headerlink" title="Heartbeats"></a>Heartbeats</h3><p>由 k8s 节点发送的心跳帮助确定节点的可用性。</p>
+<p>心跳有两种形式:NodeStatus 和 Lease 对象的更新。每个节点在 kube-node-lease 名称空间中都有一个相关联的 Lease 对象。Lease 是一种轻量级资源，它可以随着集群的扩展提高节点心跳的性能。</p>
+<p>kubelet 负责创建和更新 NodeStatus 和 Lease 对象：</p>
+<ul>
+<li><p>kubelet 在状态发生变化时更新节点状态，或者在配置的时间间隔内没有更新。NodeStatus 更新的默认间隔是 5 分钟(远远长于无法到达节点的 40 秒默认超时)。</p>
+</li>
+<li><p>kubelet 每 10 秒创建并更新其租赁对象(默认的更新间隔)。租约更新独立于节点状态更新发生。如果租约更新失败，kubelet 将以指数回退的方式重试，起始时间为 200 毫秒，上限为 7 秒。</p>
+</li>
+</ul>
+<h3 id="Reliability"><a href="#Reliability" class="headerlink" title="Reliability"></a>Reliability</h3><p>在大多数情况下，节点控制器将回收速率限制为——节点回收速率(默认值为 0.1)每秒，这意味着它每 10 秒不会从超过 1 个节点中回收 pod。</p>
+<p>当给定可用性区域中的节点变得不健康时，节点退出行为将发生变化。节点控制器同时检查区域中有多少节点是不健康的(NodeReady 状态是 ConditionUnknown 或 ConditionFalse)。如果不健康的节点的分数至少–unhealthy-zone-threshold (默认 0.55)然后驱逐率是减少:如果集群很小(即小于或等于–large-cluster-size-threshold 节点默认 50)驱逐就停止,否则驱逐率降低到–secondary-node-eviction-rate (默认 0.01)每秒。每个可用性区域实现这些策略的原因是，一个可用性区域可能与主可用性区域分离，而其他可用性区域保持连接。如果您的集群没有跨越多个云提供商可用性区域，那么就只有一个可用性区域(整个集群)。</p>
+<p>将节点分布到多个可用性区域的一个关键原因是，这样当整个区域出现故障时，可以将工作负载转移到健康区域。因此，如果一个区域中的所有节点都不健康，那么节点控制器将以正常的节点驱逐率(node-eviction-rate)进行驱逐。最极端的情况是所有区域都完全不健康(即集群中没有健康节点)。在这种情况下，节点控制器假定主连接有问题，并停止所有收回操作，直到恢复某些连接为止。</p>
+<p>节点控制器还负责清除运行在带有 NoExecute 污染的节点上的 pod，除非这些 pod 容忍这种污染。节点控制器还添加了与节点问题(如节点不可用或未就绪)相对应的污点。这意味着调度器不会将 pod 放置到不健康的节点上。</p>
+<p><strong>警告</strong>：kubectl cordon 将一个节点标记为’unschedulable’，这样做的副作用是服务控制器从任何负载均衡器节点目标列表中删除该节点，它以前是合格的，有效地从被封锁的节点中删除传入的负载均衡器流量。</p>
+<h3 id="Node-capacity"><a href="#Node-capacity" class="headerlink" title="Node capacity"></a>Node capacity</h3><p>节点对象跟踪关于节点资源容量的信息(例如:可用内存量和 cpu 数量)。自我注册的节点在注册期间报告它们的容量。如果手动添加节点，则需要在添加节点时设置节点的容量信息。</p>
+<p>k8s 调度程序确保一个节点上有足够的资源供所有 pod 使用。调度程序检查该节点上容器请求的总和是否大于该节点的容量。请求的总和包括 kubelet 管理的所有容器，但不包括直接由容器运行时启动的任何容器，也不包括在 kubelet 控制之外运行的任何进程。</p>
+<p><strong>注意</strong>：如果希望显式地为非pod进程保留资源，请参阅<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#system-reserved">系统守护进程的保留资源</a>。<br>`</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/11/k8s-objects-field-selector/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/11/k8s-objects-field-selector/" class="post-title-link" itemprop="url">k8s-对象属性选择器</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-11 17:08:43" itemprop="dateCreated datePublished" datetime="2020-12-11T17:08:43+08:00">2020-12-11</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-14 11:41:39" itemprop="dateModified" datetime="2020-12-14T11:41:39+08:00">2020-12-14</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>属性选择器允许基于一个或多个资源属性获取k8s资源。属性请求的示例：</p>
+<ul>
+<li>metadata.name=my-service</li>
+<li>metadata.namespace!=default</li>
+<li>status.phase=Pending</li>
+</ul>
+<p>使用kubectl命令查询所有status.phase属性值为Running的Pods:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --field-selector status.phase=Running</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>: 属性选择器本质上是资源过滤器。默认情况下，没有使用选择器或者过滤器，意味着指定类型的所有资源都会被选中。</p>
+<h2 id="支持的属性"><a href="#支持的属性" class="headerlink" title="支持的属性"></a>支持的属性</h2><p>受支持的字段选择器因k8s资源类型而异。所有资源类型都支持metadata.name和metadata.namespace字段。使用不支持的字段选择器会产生错误。例如:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get ingress --field-selector foo.bar=baz</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Error from server (BadRequest): Unable to find &quot;ingresses&quot; that match label selector &quot;&quot;, field selector &quot;foo.bar=baz&quot;: &quot;foo.bar&quot; is not a known field selector: only &quot;metadata.name&quot;, &quot;metadata.namespace&quot;</span><br></pre></td></tr></table></figure>
+
+<h2 id="支持的运算符"><a href="#支持的运算符" class="headerlink" title="支持的运算符"></a>支持的运算符</h2><p>可以在字段选择器中使用=、==和!=操作符(=和==意思相同)。例如，这个kubectl命令选择不在默认名称空间中的所有K8s服务</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get services  --all-namespaces --field-selector metadata.namespace!=default</span><br></pre></td></tr></table></figure>
+
+<h2 id="组合选择器"><a href="#组合选择器" class="headerlink" title="组合选择器"></a>组合选择器</h2><p>与标签和其他选择器一样，属性选择器可以作为逗号分隔的列表组合在一起。这个kubectl命令选择状态为其的所有Pods(status.phase不等于Running，spec.restartPolicy等于Always）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --field-selector=status.phase!=Running,spec.restartPolicy=Always</span><br></pre></td></tr></table></figure>
+
+<h2 id="多个资源类型"><a href="#多个资源类型" class="headerlink" title="多个资源类型"></a>多个资源类型</h2><p>可以跨多个资源类型使用属性选择器。这个kubectl命令选择不在default命名空间中的所有Statefulsets和Services</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1084,1099 +1382,6 @@
     
     <div class="post-body" itemprop="articleBody">
           
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/09/k8s-component-api-server/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/09/k8s-component-api-server/" class="post-title-link" itemprop="url">k8s-tool-api-server</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020-12-09 15:17:08" itemprop="dateCreated datePublished" datetime="2020-12-09T15:17:08+08:00">2020-12-09</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-10 09:57:53" itemprop="dateModified" datetime="2020-12-10T09:57:53+08:00">2020-12-10</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>K8s API server 验证和配置 API 对象的数据，这些对象包括 pods、服务、复制控制器等。API server 为 REST 操作提供服务，并为集群提供共享状态前端，所有其他组件都通过该状态进行交互。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kube-apiserver [flags]</span><br></pre></td></tr></table></figure>
-
-<table>
-<thead>
-<tr>
-<th align="left">选项</th>
-<th align="left">类型</th>
-<th align="left">默认值</th>
-<th align="left">描述</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">–add-dir-header</td>
-<td align="left">boolean</td>
-<td align="left"></td>
-<td align="left">如果为 true，将增加文件夹到日志消息的头里</td>
-</tr>
-<tr>
-<td align="left">–advertise-address</td>
-<td align="left">ip</td>
-<td align="left"></td>
-<td align="left">向集群成员发布 apiserver 的 IP 地址。集群的其他节点必须可以访问该地址。如果为空，则使用–bind-address。如果未指定–bind-address，将使用主机的默认接口</td>
-</tr>
-<tr>
-<td align="left">–allow-privileged</td>
-<td align="left">boolean</td>
-<td align="left">false</td>
-<td align="left">如果为 true,表示允许特权容器。默认为 false</td>
-</tr>
-<tr>
-<td align="left">–anonymous-auth</td>
-<td align="left">boolean</td>
-<td align="left">true</td>
-<td align="left">是否允许匿名访问 API server 的安全接口。未被其他身份验证方法拒绝的请求被视为匿名请求。匿名请求的用户名为 system:Anonymous，组名为 system:unauthenticated。默认为 true</td>
-</tr>
-<tr>
-<td align="left">–api-audiences</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">API 的标识符。service account 令牌身份验证器将验证针对 API 使用的令牌至少绑定到其中一个受众。如果配置了–service-account-issuer 标志而未配置此标志，则此字段默认为包含发行者 URL 的单个元素列表。</td>
-</tr>
-<tr>
-<td align="left">–apiserver-count</td>
-<td align="left">int</td>
-<td align="left">1</td>
-<td align="left">集群中运行的 apiservers 数量必须为正数。(在–endpoint-reconciler-type=master-count 启用时使用)，默认为 1</td>
-</tr>
-<tr>
-<td align="left">–audit-log-batch-buffer-size</td>
-<td align="left">int</td>
-<td align="left">10000</td>
-<td align="left">在批处理和写入之前存储事件的缓冲区的大小。只在批处理模式下使用，默认为 10000</td>
-</tr>
-<tr>
-<td align="left">–audit-log-batch-max-size</td>
-<td align="left">int</td>
-<td align="left">1</td>
-<td align="left">批处理数量的最大值。只在批处理模式下使用，默认为 1</td>
-</tr>
-<tr>
-<td align="left">–audit-log-batch-max-wait</td>
-<td align="left">duration</td>
-<td align="left"></td>
-<td align="left">强制写入尚未达到最大大小的批处理之前等待的时间。只在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-batch-throttle-burst</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">如果以前没有使用 ThrottleQPS，则同时发送的最大请求数。只在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-batch-throttle-enable</td>
-<td align="left">boolean</td>
-<td align="left"></td>
-<td align="left">是否启用批处理节流。只在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-batch-throttle-qps</td>
-<td align="left">float32</td>
-<td align="left"></td>
-<td align="left">每秒最大平均批处理数。只在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-compress</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果设置，则使用 gzip 压缩轮换的日志文件。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-format</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">保存审计日志的格式。“legacy”表示每个事件的一行文本格式。“json”表示结构化 json 格式。已知的格式是 legacy 和 json。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-maxage</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">根据文件名中编码的时间戳保留旧审计日志文件的最大天数。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-maxbackup</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">要保留的旧审计日志文件的最大数目。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-maxsize</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">轮换审计日志文件之前的最大大小(以兆字节为单位)。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-mode</td>
-<td align="left">string</td>
-<td align="left">Blocking</td>
-<td align="left">发送审计事件的策略。Blocking 表示发送事件应该阻塞服务器响应。Batch 导致后端异步地缓冲和编写事件。已知的模式是 Batch、Blocking、blocking-strict。默认是 Blocking</td>
-</tr>
-<tr>
-<td align="left">–audit-log-path</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果设置，所有进入 apiserver 的请求都将被记录到该文件中。“-”的意思是标准输出。</td>
-</tr>
-<tr>
-<td align="left">–audit-log-truncate-enabled</td>
-<td align="left">boolean</td>
-<td align="left"></td>
-<td align="left">是否启用了事件和批处理截断</td>
-</tr>
-<tr>
-<td align="left">–audit-log-truncate-max-batch-size</td>
-<td align="left">int</td>
-<td align="left">10485760</td>
-<td align="left">发送到基础后端批处理的最大大小。实际的序列化大小可能要大数百个字节。如果一个批超过这个限制，它将被分割成几个更小的批。默认值为 10485760</td>
-</tr>
-<tr>
-<td align="left">–audit-log-truncate-max-event-size</td>
-<td align="left">int</td>
-<td align="left">102400</td>
-<td align="left">发送到底层后端审计事件的最大大小。如果事件的大小大于这个数字，则删除第一个请求和响应，如果这不能充分减少大小，则丢弃事件。默认值为 102400</td>
-</tr>
-<tr>
-<td align="left">–audit-log-version</td>
-<td align="left">string</td>
-<td align="left">audit.k8s.io/v1</td>
-<td align="left">用于序列化写入日志的审计事件的 API 组和版本。默认为 audit.k8s.io/v1</td>
-</tr>
-<tr>
-<td align="left">–audit-policy-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">定义审计策略的文件地址</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-buffer-size</td>
-<td align="left">int</td>
-<td align="left">10000</td>
-<td align="left">在批处理和写入之前存储事件的缓冲区的大小。只在批处理模式下使用。默认为 10000</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-max-size</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">批处理的最大大小。只在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-max-size</td>
-<td align="left">int</td>
-<td align="left">400</td>
-<td align="left">批次的最大大小。 仅在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-max-wait</td>
-<td align="left">duration</td>
-<td align="left">默认值：30s</td>
-<td align="left">强制写入尚未达到最大大小的批处理之前要等待的时间。 仅在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-throttle-burst</td>
-<td align="left">int</td>
-<td align="left">默认值：15</td>
-<td align="left">如果之前未使用 ThrottleQPS，则同时发送的最大请求数。 仅在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-throttle-enable</td>
-<td align="left">boolean</td>
-<td align="left">默认值：true</td>
-<td align="left">是否启用了批量限制。 仅在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-batch-throttle-qps</td>
-<td align="left">float32</td>
-<td align="left">默认值：10</td>
-<td align="left">每秒的最大平均批次数。 仅在批处理模式下使用。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-config-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">定义审计 webhook 配置的 kubeconfig 格式文件的路径。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-initial-backoff</td>
-<td align="left">duration</td>
-<td align="left">默认值：10s</td>
-<td align="left">重试第一个失败的请求之前要等待的时间。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-mode</td>
-<td align="left">string</td>
-<td align="left">默认值：”batch”</td>
-<td align="left">发送审计事件的策略。 阻止（Blocking）表示发送事件应阻止服务器响应。 批处理导致后端异步缓冲和写入事件。 已知的模式是批处理（batch），阻塞（blocking），严格阻塞（blocking-strict）。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-truncate-enabled</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">是否启用事件和批处理截断。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-truncate-max-batch-size</td>
-<td align="left">int</td>
-<td align="left">默认值：10485760</td>
-<td align="left">发送到下层后端的批次的最大数据量。 实际的序列化大小可能会增加数百个字节。 如果一个批次超出此限制，则将其分成几个较小的批次。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-truncate-max-event-size</td>
-<td align="left">int</td>
-<td align="left">默认值：102400</td>
-<td align="left">发送到下层后端的批次的最大数据量。 如果事件的大小大于此数字，则将删除第一个请求和响应， 并且如果事件和事件的大小没有足够减小，则将丢弃事件。</td>
-</tr>
-<tr>
-<td align="left">–audit-webhook-version</td>
-<td align="left">string</td>
-<td align="left">默认值：”audit.k8s.io/v1”</td>
-<td align="left">用于序列化写入 Webhook 的审计事件的 API 组和版本。</td>
-</tr>
-<tr>
-<td align="left">–authentication-token-webhook-cache-ttl</td>
-<td align="left">duration</td>
-<td align="left">默认值：2m0s</td>
-<td align="left">来自 Webhook 令牌身份验证器的缓存响应的持续时间。</td>
-</tr>
-<tr>
-<td align="left">–authentication-token-webhook-config-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含 Webhook 配置的文件，用于以 kubeconfig 格式进行令牌认证。 API 服务器将查询远程服务，以对持有者令牌进行身份验证。</td>
-</tr>
-<tr>
-<td align="left">–authentication-token-webhook-version</td>
-<td align="left">string</td>
-<td align="left">默认值：”v1beta1”</td>
-<td align="left">与 Webhook 之间交换 authentication.k8s.io TokenReview 时使用的 API 版本。</td>
-</tr>
-<tr>
-<td align="left">–authorization-mode</td>
-<td align="left">stringSlice</td>
-<td align="left">默认值：[AlwaysAllow]</td>
-<td align="left">在安全端口上进行鉴权的插件的顺序列表。 逗号分隔的列表：AlwaysAllow,AlwaysDeny,ABAC,Webhook,RBAC,Node。</td>
-</tr>
-<tr>
-<td align="left">–authorization-policy-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含安全策略的文件，其内容为分行 JSON 格式， 在安全端口上与 –authorization-mode=ABAC 一起使用。</td>
-</tr>
-<tr>
-<td align="left">–authorization-webhook-cache-authorized-ttl</td>
-<td align="left">duration</td>
-<td align="left">默认值：5m0s</td>
-<td align="left">缓存来自 Webhook 鉴权组件的 “授权（authorized）” 响应的持续时间。</td>
-</tr>
-<tr>
-<td align="left">–authorization-webhook-cache-unauthorized-ttl</td>
-<td align="left">duration</td>
-<td align="left">默认值：30s</td>
-<td align="left">缓存来自 Webhook 鉴权模块的 “未授权（unauthorized）” 响应的持续时间。</td>
-</tr>
-<tr>
-<td align="left">–authorization-webhook-config-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含 Webhook 配置的文件，其格式为 kubeconfig， 与 –authorization-mode=Webhook 一起使用。 API 服务器将查询远程服务，以对 API 服务器的安全端口的访问执行鉴权。</td>
-</tr>
-<tr>
-<td align="left">–authorization-webhook-version</td>
-<td align="left">string</td>
-<td align="left">默认值：”v1beta1”</td>
-<td align="left">与 Webhook 之间交换 authorization.k8s.io SubjectAccessReview 时使用的 API 版本。</td>
-</tr>
-<tr>
-<td align="left">–azure-container-registry-config</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含 Azure 容器仓库配置信息的文件的路径。</td>
-</tr>
-<tr>
-<td align="left">–bind-address</td>
-<td align="left">ip</td>
-<td align="left">默认值：0.0.0.0</td>
-<td align="left">监听 –secure-port 端口的 IP 地址。 集群的其余部分以及 CLI/web 客户端必须可以访问关联的接口。 如果为空白或未指定地址（0.0.0.0 或 ::），则将使用所有接口。</td>
-</tr>
-<tr>
-<td align="left">–cert-dir</td>
-<td align="left">string</td>
-<td align="left">默认值：”/var/run/kubernetes”</td>
-<td align="left">TLS 证书所在的目录。 如果提供了 –tls-cert-file 和 –tls-private-key-file，则将忽略此标志。</td>
-</tr>
-<tr>
-<td align="left">–client-ca-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果已设置，则使用与客户端证书的 CommonName 对应的标识对任何出示由 client-ca 文件中的授权机构之一签名的客户端证书的请求进行身份验证。</td>
-</tr>
-<tr>
-<td align="left">–cloud-config</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">云厂商配置文件的路径。 空字符串表示无配置文件。</td>
-</tr>
-<tr>
-<td align="left">–cloud-provider</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">云服务提供商。 空字符串表示没有云厂商。</td>
-</tr>
-<tr>
-<td align="left">–cloud-provider-gce-l7lb-src-cidrs</td>
-<td align="left">cidrs</td>
-<td align="left">默认值：130.211.0.0/22,35.191.0.0/16</td>
-<td align="left">在 GCE 防火墙中打开 CIDR，以进行 L7 LB 流量代理和运行状况检查</td>
-</tr>
-<tr>
-<td align="left">–contention-profiling</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">如果启用了性能分析，则启用锁争用性能分析</td>
-</tr>
-<tr>
-<td align="left">–cors-allowed-origins</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">CORS 允许的来源清单，以逗号分隔。 允许的来源可以是支持子域匹配的正则表达式。 如果此列表为空，则不会启用 CORS。</td>
-</tr>
-<tr>
-<td align="left">–default-not-ready-toleration-seconds</td>
-<td align="left">int</td>
-<td align="left">默认值：300</td>
-<td align="left">标明 notReady:NoExecute 的 tolerationSeconds， 默认情况下将其添加到尚未具有此容忍度的每个 pod 中。</td>
-</tr>
-<tr>
-<td align="left">–default-unreachable-toleration-seconds</td>
-<td align="left">int</td>
-<td align="left">默认值：300</td>
-<td align="left">标明 unreachable:NoExecute 的 tolerationSeconds， 默认情况下将其添加到尚未具有此容忍度的每个 pod 中。</td>
-</tr>
-<tr>
-<td align="left">–default-watch-cache-size</td>
-<td align="left">int</td>
-<td align="left">默认值：100</td>
-<td align="left">默认监听（watch）缓存大小。 如果为零，则将为没有设置默认监视大小的资源禁用监视缓存。</td>
-</tr>
-<tr>
-<td align="left">–delete-collection-workers</td>
-<td align="left">int</td>
-<td align="left">默认值：1</td>
-<td align="left">为 DeleteCollection 调用而产生的工作程序数。 这些用于加速名字空间清理。</td>
-</tr>
-<tr>
-<td align="left">–disable-admission-plugins</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">尽管位于默认启用的插件列表中（NamespaceLifecycle、LimitRanger、ServiceAccount、TaintNodesByCondition、Priority、DefaultTolerationSeconds、DefaultStorageClass、StorageObjectInUseProtection、PersistentVolumeClaimResize、RuntimeClass、CertificateApproval、CertificateSigning、CertificateSubjectRestriction、DefaultIngressClass、MutatingAdmissionWebhook、ValidatingAdmissionWebhook、ResourceQuota）仍须被禁用的插件。取值为逗号分隔的准入插件列表：AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyEscalatingExec, DenyExecOnPrivileged, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodPreset, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook。</td>
-</tr>
-<tr>
-<td align="left">该标志中插件的顺序无关紧要。</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr>
-<td align="left">–egress-selector-config-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">带有 apiserver 出站选择器配置的文件。</td>
-</tr>
-<tr>
-<td align="left">–enable-admission-plugins</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">除了默认启用的插件（NamespaceLifecycle、LimitRanger、ServiceAccount、TaintNodesByCondition、Priority、DefaultTolerationSeconds、DefaultStorageClass、StorageObjectInUseProtection、PersistentVolumeClaimResize、RuntimeClass、CertificateApproval、CertificateSigning、CertificateSubjectRestriction、DefaultIngressClass、MutatingAdmissionWebhook、ValidatingAdmissionWebhook、ResourceQuota）之外要启用的插件。取值为逗号分隔的准入插件列表：AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyEscalatingExec, DenyExecOnPrivileged, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodPreset, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook</td>
-</tr>
-<tr>
-<td align="left">该标志中插件的顺序无关紧要。</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr>
-<td align="left">–enable-aggregator-routing</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">允许聚合器将请求路由到端点 IP 而非集群 IP。</td>
-</tr>
-<tr>
-<td align="left">–enable-bootstrap-token-auth</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">启用以允许将 “kube-system” 名字空间中类型为 “bootstrap.kubernetes.io/token” 的 Secret 用于 TLS 引导身份验证。</td>
-</tr>
-<tr>
-<td align="left">–enable-garbage-collector</td>
-<td align="left"></td>
-<td align="left">默认值：true</td>
-<td align="left">启用通用垃圾收集器。 必须与 kube-controller-manager 的相应标志同步。</td>
-</tr>
-<tr>
-<td align="left">–enable-priority-and-fairness</td>
-<td align="left"></td>
-<td align="left">默认值：true</td>
-<td align="left">如果为 true 且启用了 APIPriorityAndFairness 特性门控， 请使用增强的处理程序替换 max-in-flight 处理程序， 以便根据优先级和公平性完成排队和调度。</td>
-</tr>
-<tr>
-<td align="left">–encryption-provider-config</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含加密提供程序配置信息的文件，用在 etcd 中所存储的 Secret 上。</td>
-</tr>
-<tr>
-<td align="left">–endpoint-reconciler-type</td>
-<td align="left">string</td>
-<td align="left">默认值：”lease”</td>
-<td align="left">使用端点协调器（master-count, lease, none）</td>
-</tr>
-<tr>
-<td align="left">–etcd-cafile</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">用于保护 etcd 通信的 SSL 证书颁发机构文件。</td>
-</tr>
-<tr>
-<td align="left">–etcd-certfile</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">用于保护 etcd 通信的 SSL 证书文件。</td>
-</tr>
-<tr>
-<td align="left">–etcd-compaction-interval</td>
-<td align="left">duration</td>
-<td align="left">默认值：5m0s</td>
-<td align="left">压缩请求的间隔。 如果为 0，则禁用来自 apiserver 的压缩请求。</td>
-</tr>
-<tr>
-<td align="left">–etcd-count-metric-poll-period</td>
-<td align="left">duration</td>
-<td align="left">默认值：1m0s</td>
-<td align="left">针对每种类型的资源数量轮询 etcd 的频率。 0 禁用度量值收集。</td>
-</tr>
-<tr>
-<td align="left">–etcd-db-metric-poll-interval</td>
-<td align="left">duration</td>
-<td align="left">默认值：30s</td>
-<td align="left">轮询 etcd 和更新度量值的请求间隔。 0 禁用度量值收集</td>
-</tr>
-<tr>
-<td align="left">–etcd-keyfile</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">用于保护 etcd 通信的 SSL 密钥文件。</td>
-</tr>
-<tr>
-<td align="left">–etcd-prefix</td>
-<td align="left">string</td>
-<td align="left">默认值：”/registry”</td>
-<td align="left">要在 etcd 中所有资源路径之前添加的前缀。</td>
-</tr>
-<tr>
-<td align="left">–etcd-servers</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">要连接的 etcd 服务器列表（scheme://ip:port），以逗号分隔。</td>
-</tr>
-<tr>
-<td align="left">–etcd-servers-overrides</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">etcd 服务器针对每个资源的重载设置，以逗号分隔。 单个替代格式：组/资源#服务器（group/resource#servers），其中服务器是 URL，以分号分隔。</td>
-</tr>
-<tr>
-<td align="left">–event-ttl</td>
-<td align="left">duration</td>
-<td align="left">默认值：1h0m0s</td>
-<td align="left">事件的保留时长。</td>
-</tr>
-<tr>
-<td align="left">–external-hostname</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">为此主机生成外部化 URL 时要使用的主机名（例如 Swagger API 文档或 OpenID 发现）。</td>
-</tr>
-<tr>
-<td align="left">–feature-gates</td>
-<td align="left">mapStringBool</td>
-<td align="left"></td>
-<td align="left">一组 key=value 对，用来描述测试性/试验性功能的特性门控（Feature Gate）。可选项有： 参见官方文档</td>
-</tr>
-<tr>
-<td align="left">–goaway-chance</td>
-<td align="left">float</td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr>
-<td align="left">为防止 HTTP/2 客户端卡在单个 apiserver 上，可启用随机关闭连接（GOAWAY）。 客户端的其他运行中请求将不会受到影响，并且客户端将重新连接， 可能会在再次通过负载平衡器后登陆到其他 apiserver 上。 此参数设置将发送 GOAWAY 的请求的比例。 具有单个 apiserver 或不使用负载平衡器的群集不应启用此功能。 最小值为 0（关闭），最大值为 .02（1/50 请求）； 建议使用 .001（1/1000）。</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr>
-<td align="left">-h, –help</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">kube-apiserver 的帮助命令</td>
-</tr>
-<tr>
-<td align="left">–http2-max-streams-per-connection</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">服务器为客户端提供的 HTTP/2 连接中最大流数的限制。 零表示使用 golang 的默认值。</td>
-</tr>
-<tr>
-<td align="left">–kubelet-certificate-authority</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">证书颁发机构的证书文件的路径。</td>
-</tr>
-<tr>
-<td align="left">–kubelet-client-certificate</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">TLS 的客户端证书文件的路径。</td>
-</tr>
-<tr>
-<td align="left">–kubelet-client-key</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">TLS 客户端密钥文件的路径。</td>
-</tr>
-<tr>
-<td align="left">–kubelet-preferred-address-types</td>
-<td align="left">stringSlice</td>
-<td align="left">默认值：[Hostname,InternalDNS,InternalIP,ExternalDNS,ExternalIP]</td>
-<td align="left">用于 kubelet 连接的首选 NodeAddressTypes 列表。</td>
-</tr>
-<tr>
-<td align="left">–kubelet-timeout</td>
-<td align="left">duration</td>
-<td align="left">默认值：5s</td>
-<td align="left">kubelet 操作超时时间。</td>
-</tr>
-<tr>
-<td align="left">–kubernetes-service-node-port</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">如果非零，那么 Kubernetes 主服务（由 apiserver 创建/维护）将是 NodePort 类型，使用它作为端口的值。 如果为零，则 Kubernetes 主服务将为 ClusterIP 类型。</td>
-</tr>
-<tr>
-<td align="left">–livez-grace-period</td>
-<td align="left">duration</td>
-<td align="left"></td>
-<td align="left">此选项代表 apiserver 完成启动序列并生效所需的最长时间。 从 apiserver 的启动时间到这段时间为止， /livez 将假定未完成的启动后钩子将成功完成，因此返回 true。当日志机制执行到’文件 :N’时，生成堆栈跟踪</td>
-</tr>
-<tr>
-<td align="left">–log-dir</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果为非空，则在此目录中写入日志文件</td>
-</tr>
-<tr>
-<td align="left">–log-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果为非空，使用此日志文件</td>
-</tr>
-<tr>
-<td align="left">–log-file-max-size</td>
-<td align="left">uint</td>
-<td align="left">默认值：1800</td>
-<td align="left">定义日志文件可以增长到的最大大小。单位为兆字节。 如果值为 0，则最大文件大小为无限制。</td>
-</tr>
-<tr>
-<td align="left">–log-flush-frequency</td>
-<td align="left">duration</td>
-<td align="left">默认值：5s</td>
-<td align="left">两次日志刷新之间的最大秒数</td>
-</tr>
-<tr>
-<td align="left">–logging-format</td>
-<td align="left">string</td>
-<td align="left">默认值：”text”</td>
-<td align="left">设置日志格式。允许的格式：”text”，”json”。非默认格式不支持以下标志：–add_dir_header、–alsologtostderr、–log_backtrace_at、–log_dir、–log_file、–log_file_max_size、–logtostderr、-skip_headers、-skip_log_headers、-stderrthreshold、-vmodule 和–log-flush-frequency。当前非默认选择为 alpha，并且会随时更改而不会发出警告。</td>
-</tr>
-<tr>
-<td align="left">c –logtostderr</td>
-<td align="left"></td>
-<td align="left">默认值：true</td>
-<td align="left">在标准错误而不是文件中输出日志记录</td>
-</tr>
-<tr>
-<td align="left">–master-service-namespace</td>
-<td align="left">string</td>
-<td align="left">默认值：”default”</td>
-<td align="left">已废弃：应该从其中将 Kubernetes 主服务注入到 Pod 中的名字空间。</td>
-</tr>
-<tr>
-<td align="left">–max-connection-bytes-per-sec</td>
-<td align="left">int</td>
-<td align="left"></td>
-<td align="left">如果不为零，则将每个用户连接限制为该数（字节数/秒）。 当前仅适用于长时间运行的请求。</td>
-</tr>
-<tr>
-<td align="left">–max-mutating-requests-inflight</td>
-<td align="left">int</td>
-<td align="left">默认值：200</td>
-<td align="left">在给定时间内进行中变更类型请求的最大个数。 当超过该值时，服务将拒绝所有请求。 零表示无限制。</td>
-</tr>
-<tr>
-<td align="left">–max-requests-inflight</td>
-<td align="left">int</td>
-<td align="left">默认值：400</td>
-<td align="left">在给定时间内进行中非变更类型请求的最大数量。 当超过该值时，服务将拒绝所有请求。 零表示无限制。</td>
-</tr>
-<tr>
-<td align="left">–min-request-timeout</td>
-<td align="left">int</td>
-<td align="left">默认值：1800</td>
-<td align="left">可选字段，表示处理程序在请求超时前，必须保持其处于打开状态的最小秒数。 当前只对监听（Watch）请求的处理程序有效，它基于这个值选择一个随机数作为连接超时值，以达到分散负载的目的。</td>
-</tr>
-<tr>
-<td align="left">–oidc-ca-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果设置该值，将会使用 oidc-ca-file 中的机构之一对 OpenID 服务的证书进行验证， 否则将会使用主机的根 CA 对其进行验证。</td>
-</tr>
-<tr>
-<td align="left">–oidc-client-id</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">OpenID 连接客户端的要使用的客户 ID，如果设置了 oidc-issuer-url，则必须设置这个值。</td>
-</tr>
-<tr>
-<td align="left">–oidc-groups-claim</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果提供该值，这个自定义 OpenID 连接声明将被用来设定用户组。 该声明值需要是一个字符串或字符串数组。 此标志为实验性的，请查阅身份认证相关文档进一步了解详细信息。</td>
-</tr>
-<tr>
-<td align="left">–oidc-groups-prefix</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果提供，则所有组都将以该值作为前缀，以防止与其他身份认证策略冲突。</td>
-</tr>
-<tr>
-<td align="left">–oidc-issuer-url</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">OpenID 颁发者 URL，只接受 HTTPS 方案。 如果设置该值，它将被用于验证 OIDC JSON Web Token(JWT)。</td>
-</tr>
-<tr>
-<td align="left">–oidc-required-claim</td>
-<td align="left">mapStringString</td>
-<td align="left"></td>
-<td align="left">描述 ID 令牌中必需声明的键值对。 如果设置此值，则会验证 ID 令牌中存在与该声明匹配的值。 重复此标志以指定多个声明。</td>
-</tr>
-<tr>
-<td align="left">–oidc-signing-algs</td>
-<td align="left">stringSlice</td>
-<td align="left">默认值：[RS256]</td>
-<td align="left">允许的 JOSE 非对称签名算法的逗号分隔列表。 若 JWT 所带的 “alg” 标头值不在列表中，则该 JWT 将被拒绝。 取值依据 RFC 7518 <a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc7518#section-3.1">https://tools.ietf.org/html/rfc7518#section-3.1</a> 定义。</td>
-</tr>
-<tr>
-<td align="left">–oidc-username-claim</td>
-<td align="left">string</td>
-<td align="left">默认值：”sub”</td>
-<td align="left">要用作用户名的 OpenID 声明。 请注意，除默认声明（”sub”）以外的其他声明不能保证是唯一且不可变的。 此标志是实验性的，请参阅身份认证文档以获取更多详细信息。</td>
-</tr>
-<tr>
-<td align="left">–oidc-username-prefix</td>
-<td align="left">string</td>
-<td align="left">如果提供，则所有用户名都将以该值作为前缀。 如果未提供，则除 “email” 之外的用户名声明都会添加颁发者 URL 作为前缀，以避免冲突。 要略过添加前缀处理，请设置值为 “-“。</td>
-<td align="left"></td>
-</tr>
-<tr>
-<td align="left">–permit-port-sharing</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">如果为 true，则在绑定端口时将使用 SO_REUSEPORT， 这样多个实例可以绑定到同一地址和端口上。[默认值 = false]</td>
-</tr>
-<tr>
-<td align="left">–profiling</td>
-<td align="left"></td>
-<td align="left">默认值：true</td>
-<td align="left">通过 Web 界面启用性能分析 host:port/debug/pprof/</td>
-</tr>
-<tr>
-<td align="left">–proxy-client-cert-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">当必须调用外部程序以处理请求时，用于证明聚合器或者 kube-apiserver 的身份的客户端证书。 包括代理转发到用户 api-server 的请求和调用 Webhook 准入控制插件的请求。 Kubernetes 期望此证书包含来自于 –requestheader-client-ca-file 标志中所给 CA 的签名。 该 CA 在 kube-system 命名空间的 “extension-apiserver-authentication” ConfigMap 中公开。 从 kube-aggregator 收到调用的组件应该使用该 CA 进行各自的双向 TLS 验证。</td>
-</tr>
-<tr>
-<td align="left">–proxy-client-key-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">当必须调用外部程序来处理请求时，用来证明聚合器或者 kube-apiserver 的身份的客户端私钥。 这包括代理转发给用户 api-server 的请求和调用 Webhook 准入控制插件的请求。</td>
-</tr>
-<tr>
-<td align="left">–request-timeout</td>
-<td align="left">duration</td>
-<td align="left">默认值：1m0s</td>
-<td align="left">可选字段，指示处理程序在超时之前必须保持打开请求的持续时间。 这是请求的默认请求超时，但对于特定类型的请求，可能会被 –min-request-timeout 等标志覆盖。</td>
-</tr>
-<tr>
-<td align="left">–requestheader-allowed-names</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">此值为客户端证书通用名称（Common Name）的列表；表中所列的表项可以用来提供用户名， 方式是使用 –requestheader-username-headers 所指定的头部。 如果为空，能够通过–requestheader-client-ca-file 中机构认证的客户端证书都是被允许的。</td>
-</tr>
-<tr>
-<td align="left">–requestheader-client-ca-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">在信任请求头中以 –requestheader-username-headers 指示的用户名之前， 用于验证接入请求中客户端证书的根证书包。 警告：一般不要假定传入请求已被授权。</td>
-</tr>
-<tr>
-<td align="left">–requestheader-extra-headers-prefix</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">用于查验请求头部的前缀列表。建议使用 X-Remote-Extra-。</td>
-</tr>
-<tr>
-<td align="left">–requestheader-group-headers</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">用于查验用户组的请求头部列表。建议使用 X-Remote-Group。</td>
-</tr>
-<tr>
-<td align="left">–requestheader-username-headers</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">用于查验用户名的请求头头列表。建议使用 X-Remote-User。</td>
-</tr>
-<tr>
-<td align="left">–runtime-config</td>
-<td align="left">mapStringString</td>
-<td align="left"></td>
-<td align="left">一组启用或禁用内置 API 的键值对。支持的选项包括：详情见官方文档</td>
-</tr>
-<tr>
-<td align="left">–secure-port</td>
-<td align="left">int</td>
-<td align="left">默认值：6443</td>
-<td align="left">带身份验证和鉴权机制的 HTTPS 服务端口。 不能用 0 关闭。</td>
-</tr>
-<tr>
-<td align="left">–service-account-extend-token-expiration</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">在生成令牌时，启用投射服务帐户到期时间扩展， 这有助于从旧版令牌安全地过渡到绑定的服务帐户令牌功能。 如果启用此标志，则准入插件注入的令牌的过期时间将延长至 1 年，以防止过渡期间发生意外故障， 并忽略 service-account-max-token-expiration 的值。</td>
-</tr>
-<tr>
-<td align="left">–service-account-issuer {service-account-issuer}/.well-known/openid-configuration</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">服务帐号令牌颁发者的标识符。 颁发者将在已办法令牌的 “iss” 声明中检查此标识符。 此值为字符串或 URI。 如果根据 OpenID Discovery 1.0 规范检查此选项不是有效的 URI，则即使特性门控设置为 true， ServiceAccountIssuerDiscovery 功能也将保持禁用状态。 强烈建议该值符合 OpenID 规范：<a target="_blank" rel="noopener" href="https://openid.net/specs/openid-connect-discovery-1_0.html%E3%80%82">https://openid.net/specs/openid-connect-discovery-1_0.html。</a> 实践中，这意味着 service-account-issuer 取值必须是 HTTPS URL。 还强烈建议此 URL 能够在 {service-account-issuer}/.well-known/openid-configuration 处提供 OpenID 发现文档。</td>
-</tr>
-<tr>
-<td align="left">–service-account-jwks-uri</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">覆盖 /.well-known/openid-configuration 提供的发现文档中 JSON Web 密钥集的 URI。 如果发现文档和密钥集是通过 API 服务器外部 （而非自动检测到或被外部主机名覆盖）之外的 URL 提供给依赖方的，则此标志很有用。 仅在启用 ServiceAccountIssuerDiscovery 特性门控的情况下有效。</td>
-</tr>
-<tr>
-<td align="left">–service-account-key-file</td>
-<td align="left">stringArray</td>
-<td align="left"></td>
-<td align="left">包含 PEM 编码的 x509 RSA 或 ECDSA 私钥或公钥的文件，用于验证 ServiceAccount 令牌。 指定的文件可以包含多个键，并且可以使用不同的文件多次指定标志。 如果未指定，则使用 –tls-private-key-file。 提供 –service-account-signing-key 时必须指定。</td>
-</tr>
-<tr>
-<td align="left">–service-account-lookup</td>
-<td align="left"></td>
-<td align="left">默认值：true</td>
-<td align="left">如果为 true，则在身份认证时验证 etcd 中是否存在 ServiceAccount 令牌。</td>
-</tr>
-<tr>
-<td align="left">–service-account-max-token-expiration</td>
-<td align="left">duration</td>
-<td align="left"></td>
-<td align="left">服务帐户令牌发布者创建的令牌的最长有效期。 如果请求有效期大于此值的有效令牌请求，将使用此值的有效期颁发令牌。</td>
-</tr>
-<tr>
-<td align="left">–service-account-signing-key-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含服务帐户令牌颁发者当前私钥的文件的路径。 颁发者将使用此私钥签署所颁发的 ID 令牌（需要启用 “TokenRequest” 特性门控）。</td>
-</tr>
-<tr>
-<td align="left">–service-cluster-ip-range</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">CIDR 表示的 IP 范围用来为服务分配集群 IP。 此地址不得与指定给节点或 Pod 的任何 IP 范围重叠。</td>
-</tr>
-<tr>
-<td align="left">–service-node-port-range</td>
-<td align="left">portRange</td>
-<td align="left">默认值：30000-32767</td>
-<td align="left">保留给具有 NodePort 可见性的服务的端口范围。 例如：”30000-32767”。范围的两端都包括在内。</td>
-</tr>
-<tr>
-<td align="left">–show-hidden-metrics-for-version</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">你要显示隐藏指标的先前版本。仅先前的次要版本有意义，不允许其他值。 格式为 <major>.<minor>，例如：”1.16”。 这种格式的目的是确保您有机会注意到下一个版本是否隐藏了其他指标， 而不是在此之后将它们从发行版中永久删除时感到惊讶。</td>
-</tr>
-<tr>
-<td align="left">–shutdown-delay-duration</td>
-<td align="left">duration</td>
-<td align="left"></td>
-<td align="left">延迟终止时间。在此期间，服务器将继续正常处理请求。 端点 /healthz 和 /livez 将返回成功，但是 /readyz 立即返回失败。 在此延迟过去之后，将开始正常终止。 这可用于允许负载平衡器停止向该服务器发送流量。</td>
-</tr>
-<tr>
-<td align="left">–skip-headers</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">如果为 true，日志消息中避免标题前缀</td>
-</tr>
-<tr>
-<td align="left">–skip-log-headers</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">如果为 true，则在打开日志文件时避免标题</td>
-</tr>
-<tr>
-<td align="left">–stderrthreshold</td>
-<td align="left">severity</td>
-<td align="left">默认值：2</td>
-<td align="left">将达到或超过此阈值的日志写到标准错误输出</td>
-</tr>
-<tr>
-<td align="left">–storage-backend</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">持久化存储后端。选项：”etcd3”（默认）。</td>
-</tr>
-<tr>
-<td align="left">–storage-media-type</td>
-<td align="left">string</td>
-<td align="left">默认值：”application/vnd.kubernetes.protobuf”</td>
-<td align="left">用于在存储中存储对象的媒体类型。 某些资源或存储后端可能仅支持特定的媒体类型，并且将忽略此设置。</td>
-</tr>
-<tr>
-<td align="left">–tls-cert-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含用于 HTTPS 的默认 x509 证书的文件。（CA 证书（如果有）在服务器证书之后并置）。 如果启用了 HTTPS 服务，并且未提供 –tls-cert-file 和 –tls-private-key-file， 为公共地址生成一个自签名证书和密钥，并将其保存到 –cert-dir 指定的目录中。</td>
-</tr>
-<tr>
-<td align="left">–tls-cipher-suites</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">服务器的密码套件的列表，以逗号分隔。如果省略，将使用默认的 Go 密码套件。首选值：TLS_AES_128_GCM_SHA256、TLS_AES_256_GCM_SHA384、TLS_CHACHA20_POLY1305_SHA256、TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA、TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256、TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA、TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384、TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305、TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256、TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA、TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA、TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256、TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA、TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384、TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305、TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256、TLS_RSA_WITH_3DES_EDE_CBC_SHA、TLS_RSA_WITH_AES_128_CBC_SHA、TLS_RSA_WITH_AES_128_GCM_SHA256、TLS_RSA_WTLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256、TLS_ECDHE_ECDSA_WITH_RC4_128_SHA、TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256、TLS_ECDHE_RSA_WITH_RC4_128_SHA、TLS_RSA_WITH_AES_128_CBC_SHA256、TLS_RSA_WITH_RC4_128_SHA。</td>
-</tr>
-<tr>
-<td align="left">–tls-min-version</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">支持的最低 TLS 版本。可能的值：VersionTLS10，VersionTLS11，VersionTLS12，VersionTLS13</td>
-</tr>
-<tr>
-<td align="left">–tls-private-key-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">包含匹配 –tls-cert-file 的 x509 证书私钥的文件。</td>
-</tr>
-<tr>
-<td align="left">–tls-sni-cert-key</td>
-<td align="left">namedCertKey</td>
-<td align="left">默认值：[]</td>
-<td align="left">一对 x509 证书和私钥文件路径，（可选）后缀为全限定域名的域名模式列表，可以使用带有通配符的前缀。 域模式也允许使用 IP 地址，但仅当 apiserver 对客户端请求的 IP 地址具有可见性时，才应使用 IP。 如果未提供域模式，则提取证书的名称。 非通配符匹配优先于通配符匹配，显式域模式优先于提取出的名称。 对于多个密钥/证书对，请多次使用 –tls-sni-cert-key。 示例：”example.crt,example.key” 或 “foo.crt,foo.key:*.foo.com,foo.com”。</td>
-</tr>
-<tr>
-<td align="left">–token-auth-file</td>
-<td align="left">string</td>
-<td align="left"></td>
-<td align="left">如果设置该值，这个文件将被用于通过令牌认证来保护 API 服务的安全端口。</td>
-</tr>
-<tr>
-<td align="left">-v, –v</td>
-<td align="left">Level</td>
-<td align="left"></td>
-<td align="left">日志级别详细程度的数字</td>
-</tr>
-<tr>
-<td align="left">–version version[=true]</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">打印版本信息并退出</td>
-</tr>
-<tr>
-<td align="left">–vmodule</td>
-<td align="left">moduleSpec</td>
-<td align="left"></td>
-<td align="left">以逗号分隔的 pattern=N 设置列表，用于文件过滤的日志记录</td>
-</tr>
-<tr>
-<td align="left">–watch-cache</td>
-<td align="left"></td>
-<td align="left">默认值：true</td>
-<td align="left">在 apiserver 中启用监视缓存</td>
-</tr>
-<tr>
-<td align="left">–watch-cache-sizes</td>
-<td align="left">stringSlice</td>
-<td align="left"></td>
-<td align="left">某些资源（pods、nodes 等）的监视缓存大小设置，以逗号分隔。 每个资源对应的设置格式：resource[.group]#size，其中 resource 为小写复数（无版本）， 对于 apiVersion v1（旧版核心 API）的资源要省略 group， 对其它资源要给出 group，size 为一个数字。 启用 watch-cache 时，此功能生效。 某些资源（replicationcontrollers、endpoints、nodes、pods、services、apiservices.apiregistration.k8s.io） 具有通过启发式设置的系统默认值，其他资源默认为 default-watch-cache-size</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/09/k8s-tools-kind-local-registry/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/09/k8s-tools-kind-local-registry/" class="post-title-link" itemprop="url">k8s-kind-local-registry</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-09 15:07:54 / 修改时间：15:14:37" itemprop="dateCreated datePublished" datetime="2020-12-09T15:07:54+08:00">2020-12-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="创建集群和本地仓库"><a href="#创建集群和本地仓库" class="headerlink" title="创建集群和本地仓库"></a>创建集群和本地仓库</h2><p>下面的shell脚本将创建一个本地docker仓库和一个启用它的kind集群。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/sh</span></span><br><span class="line">set -o errexit</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> create registry container unless it already exists</span></span><br><span class="line">reg_name=&#x27;kind-registry&#x27;</span><br><span class="line">reg_port=&#x27;5000&#x27;</span><br><span class="line">running=&quot;$(docker inspect -f &#x27;&#123;&#123;.State.Running&#125;&#125;&#x27; &quot;$&#123;reg_name&#125;&quot; 2&gt;/dev/null || true)&quot;</span><br><span class="line">if [ &quot;$&#123;running&#125;&quot; != &#x27;true&#x27; ]; then</span><br><span class="line">  docker run \</span><br><span class="line">    -d --restart=always -p &quot;$&#123;reg_port&#125;:5000&quot; --name &quot;$&#123;reg_name&#125;&quot; \</span><br><span class="line">    registry:2</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> create a cluster with the <span class="built_in">local</span> registry enabled <span class="keyword">in</span> containerd</span></span><br><span class="line">cat &lt;&lt;EOF | kind create cluster --config=-</span><br><span class="line">kind: Cluster</span><br><span class="line">apiVersion: kind.x-k8s.io/v1alpha4</span><br><span class="line">containerdConfigPatches:</span><br><span class="line">- |-</span><br><span class="line">  [plugins.&quot;io.containerd.grpc.v1.cri&quot;.registry.mirrors.&quot;localhost:$&#123;reg_port&#125;&quot;]</span><br><span class="line">    endpoint = [&quot;http://$&#123;reg_name&#125;:$&#123;reg_port&#125;&quot;]</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> connect the registry to the cluster network</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> (the network may already be connected)</span></span><br><span class="line">docker network connect &quot;kind&quot; &quot;$&#123;reg_name&#125;&quot; || true</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Document the <span class="built_in">local</span> registry</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry</span></span><br><span class="line">cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: local-registry-hosting</span><br><span class="line">  namespace: kube-public</span><br><span class="line">data:</span><br><span class="line">  localRegistryHosting.v1: |</span><br><span class="line">    host: &quot;localhost:$&#123;reg_port&#125;&quot;</span><br><span class="line">    help: &quot;https://kind.sigs.k8s.io/docs/user/local-registry/&quot;</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用镜像库"><a href="#使用镜像库" class="headerlink" title="使用镜像库"></a>使用镜像库</h2><p>可以通过以下方式使用：</p>
-<ul>
-<li>首先拉取镜像：docker pull gcr.io/google-samples/hello-app:1.0</li>
-<li>使用本地镜像库给镜像打tag： docker tag gcr.io/google-samples/hello-app:1.0 localhost:5000/hello-app:1.0</li>
-<li>推送到本地镜像库：docker push localhost:5000/hello-app:1.0</li>
-<li>使用镜像：kubectl create deployment hello-server –image=localhost:5000/hello-app:1.0</li>
-</ul>
-
       
     </div>
 
