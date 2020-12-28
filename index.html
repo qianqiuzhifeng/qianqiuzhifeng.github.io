@@ -156,7 +156,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-count">30</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -165,7 +165,7 @@
         <span class="site-state-item-name">分类</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -194,6 +194,738 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/22/k8s-workload-resources/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/22/k8s-workload-resources/" class="post-title-link" itemprop="url">k8s-负载-资源</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-22 17:06:40" itemprop="dateCreated datePublished" datetime="2020-12-22T17:06:40+08:00">2020-12-22</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-28 14:21:59" itemprop="dateModified" datetime="2020-12-28T14:21:59+08:00">2020-12-28</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/">官方文档</a></p>
+<h2 id="Deployments"><a href="#Deployments" class="headerlink" title="Deployments"></a>Deployments</h2><h3 id="Deployments-使用场景"><a href="#Deployments-使用场景" class="headerlink" title="Deployments 使用场景"></a>Deployments 使用场景</h3><ul>
+<li>创建部署以推出 ReplicaSet。ReplicaSet 在后台创建 pod。检查 rollout 的状态，看看它是否成功。</li>
+<li>通过更新部署的 Pod TemplateSpec 声明 Pods 的新状态。创建一个新的副本集，部署管理将 pod 从旧副本集以可控的速度移动到新副本集。每个新的副本集都会更新部署的修订。</li>
+<li>回滚到较早的部署修订。每次回滚都会更新部署的修订。</li>
+<li>扩展部署以促进更多负载。</li>
+<li>暂停部署，将多个补丁应用到它的 PodTemplateSpec，然后恢复它以开始一个新的 rollout。</li>
+<li>使用部署的状态作为一个指示器，表示已经进行了部署。</li>
+<li>清理不再需要的旧副本集。</li>
+</ul>
+<h3 id="Deployment-Spec"><a href="#Deployment-Spec" class="headerlink" title="Deployment Spec"></a>Deployment Spec</h3><p>和其他 k8s 配置一样，部署需要.apiVersion、.kind 和.metadata 字段。部署也需要.spec 部分。</p>
+<h4 id="Pod-Template"><a href="#Pod-Template" class="headerlink" title="Pod Template"></a>Pod Template</h4><p>.spec 必须要有.spec.template 和 .spec.selector 字段。</p>
+<p>.spec.template 是一个 Pod 模板。和 Pod 有相同的结构，除了它是嵌套并且不包含 apiVersion 和 Kind。</p>
+<h4 id="Replicas"><a href="#Replicas" class="headerlink" title="Replicas"></a>Replicas</h4><p>.spec.replicas 是一个可选字段，描述了期望的 Pods 数量，默认为 1。</p>
+<h4 id="Selector"><a href="#Selector" class="headerlink" title="Selector"></a>Selector</h4><p>.spec.selector 是必填字段，描述了被部署追踪的 Pods 的标签选择器。</p>
+<p>.spec.selector 必须和.spec.template.metadata.labels 匹配，否则将会被 API 拒绝。</p>
+<p>在 API 版本 apps/v1 中，如果不设置的话，默认情况下.spec.selector 和.metadata.labels 与.spec.template.metadata.labels 不一致。因此它们必须被直接设置。需要注意的是 在创建 apps/v1 的部署后，.spec.selector 不可变。</p>
+<p>部署会中断那些标签匹配选择器的 Pods，如果这些 Pods 的 template 不匹配.spec.template，或者 Pods 的总数超过了.spec.replicas。</p>
+<p><strong>注意</strong>：您不应该通过创建另一个部署或创建另一个控制器(如 ReplicaSet 或 ReplicationController)直接创建标签与这个选择器匹配的其他 Pods。如果这样做，第一个部署会认为它创建了这些其他的 Pods。k8s 不会阻止你这么做。</p>
+<p>如果存在多个拥有重叠选择器的控制器，那么这些控制器将会相互争斗，并不能正确地运行。</p>
+<h4 id="Strategy"><a href="#Strategy" class="headerlink" title="Strategy"></a>Strategy</h4><p>.spec.strategy 描述了新老 Pods 替换的策略。.spec.strategy.type 可以是“Recreate”、“RollingUpdate”，默认是“RollingUpdate”。</p>
+<h4 id="Recreate-Deployment"><a href="#Recreate-Deployment" class="headerlink" title="Recreate Deployment"></a>Recreate Deployment</h4><p>当.spec.strategy.type==Recreate 时，在新 Pods 创建之前，会 kill 所有已存在的 Pods。</p>
+<p><strong>注意</strong>：这将只保证 Pod 终止之前创建升级。如果升级部署，旧版本的所有 pod 将立即终止。在创建新版本的任何 Pod 之前，将等待成功删除。如果您手动删除一个 Pod，生命周期由 ReplicaSet 控制，替换将立即创建(即使旧的 Pod 仍然处于终止状态)。如果您需要“at most”保证您的 pod，您应该考虑使用 StatefulSet。</p>
+<h2 id="ReplicaSet"><a href="#ReplicaSet" class="headerlink" title="ReplicaSet"></a>ReplicaSet</h2><h2 id="StatefulSet"><a href="#StatefulSet" class="headerlink" title="StatefulSet"></a>StatefulSet</h2><p>StatefulSet 是用来管理有状态应用的负载 API。</p>
+<p>管理部署，缩放 Pods 集，并且提供 Pods 顺序和唯一性保证。</p>
+<p>与部署一样，StatefulSet 管理基于相同容器规范的 Pods。与部署不同，StatefulSet 为每个 pod 维护一个粘性标识。这些 pod 是根据相同的规范创建的，但不能互换:每个 pod 都有一个持久性标识符，它在任何重新调度过程中都要维护这个标识符。</p>
+<p>如果想要使用存储卷给负载提供持久化，你可以使用 StatefulSet 作为一种解决方案。尽管 StatefulSet 中的单个 Pod 容易出现故障，但持久化的 Pod 标识符可以更容易地将现有的卷匹配到替换任何故障的新 Pod。</p>
+<h3 id="StatefulSet-使用场景"><a href="#StatefulSet-使用场景" class="headerlink" title="StatefulSet 使用场景"></a>StatefulSet 使用场景</h3><p>StatefulSets 对于需要以下一种或多种功能的应用程序很有价值。</p>
+<ul>
+<li><p>稳定、唯一的网络标识符。</p>
+</li>
+<li><p>稳定、持久的存储。</p>
+</li>
+<li><p>有序、优雅的部署和扩展。</p>
+</li>
+<li><p>有序、自动滚蛋升级。</p>
+</li>
+</ul>
+<p>在上面的例子中，稳定是跨 Pod (重新)调度的持久性的同义词。如果应用程序不需要任何稳定标识符或有序部署、删除或扩展，则应该使用提供一组无状态副本的工作负载对象来部署应用程序。部署或复制集可能更适合您的无状态需求。</p>
+<h2 id="DaemonSet"><a href="#DaemonSet" class="headerlink" title="DaemonSet"></a>DaemonSet</h2><p>DaemonSet 保证所有（部分）节点运行一个 Pod 副本。一旦节点加入集群，Pods 就会加入这些节点。一旦节点从集群被删除，那些 Pods 也会被垃圾回收。删除 DaemonSet 会清除它创建的 Pods。</p>
+<p>DaemonSet 典型应用：</p>
+<ul>
+<li><p>在每个节点上运行集群存储守护进程</p>
+</li>
+<li><p>在每个节点上运行日志收集守护进程</p>
+</li>
+<li><p>在每个节点上运行节点监控守护进程</p>
+</li>
+</ul>
+<p>在一个简单的例子中，每种守护进程类型都使用一个覆盖所有节点的 DaemonSet。更复杂的设置可能会对单一类型的守护进程使用多个守护进程集，但是对于不同的硬件类型使用不同的标志和（或）不同的内存和 cpu 请求。</p>
+<h2 id="Jobs"><a href="#Jobs" class="headerlink" title="Jobs"></a>Jobs</h2><p>Job 创建一个或多个 Pods，并且确保指定数量的 pod 成功终止。一旦 Pods 成功完成，Job 跟踪成功完成数据。当到底指定成功完成数量，Job 就完成了。删除 Job 会清除它创建的 Pods。</p>
+<p>创建 Job 对象的简单应用场景是为了可靠地运行一个 Pods 到完成。当第一个 Pod 失败或者被删除，Job 对象会创建一个 Pod（例如节点硬件故障或者重启）。</p>
+<h2 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h2><h2 id="TTL-Controller-for-Finished-resources"><a href="#TTL-Controller-for-Finished-resources" class="headerlink" title="TTL Controller for Finished resources"></a>TTL Controller for Finished resources</h2><p>TTL 控制器提供了一种 TTL(生存时间)机制来限制已完成执行的资源对象的生存期。TTL 控制器目前只处理 Job，可以扩展为处理其他将完成执行的资源，如 Pods 和自定义资源。</p>
+<h2 id="CronJob"><a href="#CronJob" class="headerlink" title="CronJob"></a>CronJob</h2><p>CronJob 创建循环调度 Jobs。</p>
+<p>一个 CronJob 对象类似于 crontab (cron 表)文件的一行。它以 Cron 格式编写，按照给定的调度周期运行作业。</p>
+<h2 id="ReplicationController"><a href="#ReplicationController" class="headerlink" title="ReplicationController"></a>ReplicationController</h2><p>ReplicationController 保证在任意时刻运行指定数量的 pod 副本。换句话说，ReplicationController 确保 pod 或一组同质 pod 始终处于可用状态。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/22/k8s-workload-pod-init-container/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/22/k8s-workload-pod-init-container/" class="post-title-link" itemprop="url">k8s-负载-pod-初始容器</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-22 10:08:03 / 修改时间：16:03:07" itemprop="dateCreated datePublished" datetime="2020-12-22T10:08:03+08:00">2020-12-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="理解初始容器"><a href="#理解初始容器" class="headerlink" title="理解初始容器"></a>理解初始容器</h2><p>一个 Pod 可以运行多个应用容器，但是它也可以运行一个或多个能够在应用容器启动之前运行的初始容器。</p>
+<p>初始容器就像普通容器，除了：</p>
+<ul>
+<li>初始容器总是会运行完成。</li>
+<li>每个初始容器必须在下一个启动之前成功完成。</li>
+</ul>
+<p>如果 Pod 里初始容器失败，kubelet 会重启这个初始容器直到它成功。但是，如果 Pod 的 restartPolicy 是 Never，如果在 Pod 启动时初始容器失败， k8s 将标注整个 Pod 失败。</p>
+<p>为了给 Pod 指定初始容器，在 Pod 描述中增加 initContainers 字段，作为一个容器类型的对象数组，紧邻应用 containers 数组。init 容器的状态在.status.initContainerStatuses 中返回,作为容器状态数组的 initContainerStatuses 字段(类似于.status.containerStatuses 字段)。</p>
+<h3 id="与普通容器区别"><a href="#与普通容器区别" class="headerlink" title="与普通容器区别"></a>与普通容器区别</h3><p>初始容器支持应用容器的所有属性和特征，包括资源限制，数据卷和认证配置。但是，初始容器的资源请求和限制处理逻辑与应用容器不一样，详情可以参考<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/init-containers/#resources">资源</a>文档</p>
+<p>并且初始容器不支持 lifecycle, livenessProbe, readinessProbe, 或者 startupProbe，因为初始容器必须在 Pod 准备好之前完成。</p>
+<p>如果为 Pod 指定多个初始化容器，kubelet 会按顺序运行每个初始化容器。每个初始化容器必须成功，下一个容器才能运行。当所有初始化容器都运行到完成时，kubelet 会初始化 Pod 的应用程序容器，并像往常一样运行它们。</p>
+<h2 id="初始化容器使用"><a href="#初始化容器使用" class="headerlink" title="初始化容器使用"></a>初始化容器使用</h2><p>因为初始化容器有独立于应用容器的镜像，所以对于启动相关的代码来说，它们有一些优势：</p>
+<ul>
+<li>初始化容器可以包含应用程序镜像中不存在的实用程序或者自定义设置代码。例如，在安装过程中不需要使用 sed、awk、python 或 dig 等工具从另一个镜像生成镜像。</li>
+<li>应用程序镜像构建器和部署器可以独立工作，而不需要联合构建单个应用程序映像。</li>
+<li>初始化容器可以在与相同 Pod 中的应用程序容器不同的文件系统视图上运行。因此，他们可以访问应用容器无法访问的 Secrets 。</li>
+<li>因为初始化容器在任何应用程序容器启动之前运行到完成，所以初始化容器提供了一种阻止或延迟应用程序容器启动的机制，直到满足一组先决条件。一旦满足了前提条件，一个Pod中的所有应用程序容器都可以并行启动。</li>
+<li>初始化容器可以安全地运行工具或自定义代码，否则会使应用容器映像不那么安全。通过保持不必要的工具分离，你可以限制你的应用容器图像的攻击面。</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod-lifecycle/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/17/k8s-workload-pod-lifecycle/" class="post-title-link" itemprop="url">k8s-工作负载-pod-生命周期</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-17 18:43:44" itemprop="dateCreated datePublished" datetime="2020-12-17T18:43:44+08:00">2020-12-17</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-22 10:05:33" itemprop="dateModified" datetime="2020-12-22T10:05:33+08:00">2020-12-22</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本页主要描述 pod 生命周期。 Pod 遵循一个定义好的生命周期，创建时是 Pending 阶段，它里面只要有一个私有容器启动成功就变为 Running，根据最终是否存在任何容器失败变更状态为 Succeeded 或者 Failed。</p>
+<p>当 Pod 运行时，kubelet 能够重新启动容器以处理某种类型的故障。在一个 Pod 内，k8s 跟踪不同的容器状态，并决定采取什么行动使 Pod 恢复健康。</p>
+<p>在 k8s API 中，Pods 既有规范又有实际状态。Pod 对象的状态由一组 Pod 状态组成。如果对您的应用程序有用，您还可以将自定义信息注入到 Pod 的状态数据中。</p>
+<p>Pods 在其生命周期中只会调度一次。一旦将 Pod 调度(分配)到某个节点，Pod 就会在该节点上运行，直到它停止或终止。</p>
+<h2 id="Pod-阶段"><a href="#Pod-阶段" class="headerlink" title="Pod 阶段"></a>Pod 阶段</h2><img src="/2020/12/17/k8s-workload-pod-lifecycle/k8s-pod-phase.svg" class="" title="pod-phase">
+
+<h2 id="容器状态"><a href="#容器状态" class="headerlink" title="容器状态"></a>容器状态</h2><ul>
+<li><p>Waiting：如果容器状态不是 Running 或者 Terminated，状态就为 Waiting。</p>
+</li>
+<li><p>Running：Running 状态表示容器在没有问题的情况下执行。</p>
+</li>
+<li><p>Terminated：Terminated 状态的容器开始执行，然后要么运行到完成，要么由于某种原因失败。</p>
+</li>
+</ul>
+<h2 id="容器重启策略"><a href="#容器重启策略" class="headerlink" title="容器重启策略"></a>容器重启策略</h2><p>Pod 的 spec 属性有个 restartPolicy 属性。这个属性可选值为 Always, OnFailure 和 Never，默认是 Always。</p>
+<p>restartPolicy 应用于 Pod 里的所有容器。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/17/k8s-workload-pod/" class="post-title-link" itemprop="url">k8s-工作负载-pod</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-17 15:36:45 / 修改时间：18:26:18" itemprop="dateCreated datePublished" datetime="2020-12-17T15:36:45+08:00">2020-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Pods 是可以在 k8s 中创建和管理的最小的可部署计算单元。</p>
+<p>一个 Pod 是一组一个或多个容器，具有共享的存储/网络资源，以及如何运行这些容器的规范。Pod 的内容始终位于同一个位置并共同调度，并在共享上下文中运行。Pod 为特定于应用程序的“逻辑主机”建模:它包含一个或多个相对紧密耦合的应用程序容器。在非云环境中，在相同物理或虚拟机上执行的应用程序类似于在相同逻辑主机上执行的云应用程序。</p>
+<p>与应用程序容器一样，Pod 可以包含在 Pod 启动期间运行的初始化容器。如果集群提供了这一功能，您还可以注入临时容器进行调试。</p>
+<h2 id="What-is-a-Pod"><a href="#What-is-a-Pod" class="headerlink" title="What is a Pod"></a>What is a Pod</h2><p><strong>注意</strong>：虽然 k8s 支持更多的容器运行时，而不仅仅是 Docker, Docker 是最常见的运行时，它有助于使用 Docker 中的一些术语来描述 pod。</p>
+<p>Pod 的共享上下文是一组 Linux 名称空间、cgroups，可能还有隔离的其他方面—与隔离 Docker 容器相同的内容。在 Pod 的上下文中，单个应用程序可能会应用进一步的子隔离。</p>
+<p>就 Docker 概念而言，Pod 类似于一组具有共享名称空间和共享文件系统卷的 Docker 容器。</p>
+<h2 id="Using-Pods"><a href="#Using-Pods" class="headerlink" title="Using Pods"></a>Using Pods</h2><p>常你不需要直接创建 Pods，甚至是单例的 Pods。相反，使用 Deployment 或 Job 等工作负载资源创建它们。如果您的 Pods 需要跟踪状态，请考虑 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a> 资源。</p>
+<p>k8s 集群中的 pod 主要以两种方式使用:</p>
+<ul>
+<li>运行一个容器的 Pod：“一个容器一个 Pod”的模型是 k8s 最常见的使用案例;在这种情况下，您可以将 Pod 看作是围绕单个容器的包装器;k8s 管理 pod 而不是直接管理容器。</li>
+<li>运行多个需要协同工作的容器的 Pod：一个 Pod 可以封装由多个紧密耦合且需要共享资源的位于同一位置的容器组成的应用程序。这些位于同一位置的容器形成了单一的内聚服务单元。例如，一个容器向公众提供存储在共享卷中的数据，而单独的 sidecar 容器则刷新或更新这些文件。Pod 将这些容器、存储资源和临时网络标识包装为一个单一单元。</li>
+</ul>
+<p><strong>注意</strong>：将多个位于同一位置并共同管理的容器分组到一个 Pod 中是一种相对高级的用例。您应该仅在容器紧密耦合的特定实例中使用此模式。</p>
+<p>每个 Pod 都意味着运行给定应用程序的单个实例。如果您想水平扩展应用程序(通过运行更多实例来提供更多的整体资源)，您应该使用多个 pod，每个实例一个。在 k8s 中，这通常被称为复制。复制的 pod 通常由工作负载资源及其控制器作为一个组创建和管理。</p>
+<p>有关 k8s 如何使用工作负载资源及其控制器来实现应用程序伸缩和自动修复的更多信息，请参见<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/#pods-and-controllers">Pods 和 controllers</a>。</p>
+<h3 id="How-Pods-manage-multiple-containers"><a href="#How-Pods-manage-multiple-containers" class="headerlink" title="How Pods manage multiple containers"></a>How Pods manage multiple containers</h3><p>Pods 被设计用来支持多个协作流程(作为容器)，这些流程形成一个内聚的服务单元。Pod 中的容器在集群中的同一物理或虚拟机上自动地共同定位和调度。容器可以共享资源和依赖关系，相互通信，协调何时以及如何终止它们。</p>
+<p>例如，您可能有一个容器充当共享卷中的文件的 web 服务器，以及一个单独的“sidecar”容器从远程源更新这些文件，如下图所示:</p>
+<img src="/2020/12/17/k8s-workload-pod/pod.svg" class="" title="pod">
+
+<p>一些 Pods 有 init 容器和 app 容器。Init 容器在应用程序容器启动之前运行并完成。</p>
+<p>Pods 在本质上为其组成容器提供了两种共享资源:<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/#pod-networking">网络</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/#pod-storage">存储</a>。</p>
+<h2 id="Working-with-Pods"><a href="#Working-with-Pods" class="headerlink" title="Working with Pods"></a>Working with Pods</h2><p>很少会在 k8s 中直接创建单独的 Pod—即使是单例 Pod。这是因为 pod 被设计成相对短暂的一次性实体。当创建一个 Pod(由您直接创建，或由控制器间接创建)时，新的 Pod 将被安排在集群中的一个节点上运行。Pod 将保留在该节点上，直到 Pod 完成执行、删除 Pod 对象、由于缺乏资源而删除 Pod 或节点失败。</p>
+<p><strong>注意</strong>：在一个容器中重新启动一个容器不应该与重新启动一个容器相混淆。Pod 不是一个进程，而是一个运行容器的环境。Pod 一直存在到被删除为止。</p>
+<p>当您为 Pod 对象创建清单时，请确保指定的名称是有效的 DNS 子域名。</p>
+<h3 id="Pods-and-controllers"><a href="#Pods-and-controllers" class="headerlink" title="Pods and controllers"></a>Pods and controllers</h3><p>您可以使用工作负载资源为您创建和管理多个 pod。资源的控制器处理复制和展开式，以及在 Pod 失败时的自动愈合。例如，如果一个节点发生故障，控制器会注意到该节点上的 Pod 已经停止工作，并创建一个替代 Pod。调度程序将替换 Pod 放置到健康节点上。</p>
+<p>下面是一些管理一个或多个 pod 的工作负载资源示例:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployment</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">DaemonSet</a></li>
+</ul>
+<h3 id="Pod-templates"><a href="#Pod-templates" class="headerlink" title="Pod templates"></a>Pod templates</h3><p>工作负载资源的控制器从 pod 模板创建 pod，并代表您管理这些 pod。</p>
+<p>PodTemplates 是用于创建 pod 的规范，包含在 Deployments、Jobs 和 DaemonSet 等工作负载资源中。</p>
+<p>工作负载资源的每个控制器都使用工作负载对象内部的 PodTemplate 来制作实际的 pod。PodTemplate 是你用来运行应用程序的任何负载资源的期望状态的一部分。</p>
+<p>下面的示例是一个简单作业的清单，该作业使用启动一个容器的模板。该容器中的容器打印一条消息，然后暂停。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">batch/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Job</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="comment"># This is the pod template</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">hello</span></span><br><span class="line">          <span class="attr">image:</span> <span class="string">busybox</span></span><br><span class="line">          <span class="attr">command:</span> [<span class="string">&quot;sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, <span class="string">&#x27;echo &quot;Hello, Kubernetes!&quot; &amp;&amp; sleep 3600&#x27;</span>]</span><br><span class="line">      <span class="attr">restartPolicy:</span> <span class="string">OnFailure</span></span><br><span class="line">    <span class="comment"># The pod template ends here</span></span><br></pre></td></tr></table></figure>
+
+<p>修改 pod 模板或切换到新的 pod 模板对已经存在的 pod 没有直接影响。如果您更改工作负载资源的 pod 模板，该资源需要创建使用更新模板的替换 pod。</p>
+<p>例如，StatefulSet 控制器确保运行的 pod 与每个 StatefulSet 对象的当前 pod 模板匹配。如果您编辑 StatefulSet 以更改它的 pod 模板，StatefulSet 将开始基于更新后的模板创建新的 pod。最后，所有旧的 pod 都被新 pod 替换，更新就完成了。</p>
+<p>每个工作负载资源实现自己的规则来处理对 Pod 模板的更改。如果您想更详细地了解 StatefulSet，请阅读 StatefulSet 基础教程中的更新策略。</p>
+<p>在节点上，kubelet 不直接观察或管理 pod 模板和更新细节;这些细节都被抽象出来了。关注点的抽象和分离简化了系统语义，使扩展集群的行为在不更改现有代码的情况下变得可行。</p>
+<h2 id="Resource-sharing-and-communication"><a href="#Resource-sharing-and-communication" class="headerlink" title="Resource sharing and communication"></a>Resource sharing and communication</h2><p>Pods 支持在其组成容器之间共享和通信数据。</p>
+<h3 id="Storage-in-Pods"><a href="#Storage-in-Pods" class="headerlink" title="Storage in Pods"></a>Storage in Pods</h3><p>Pod 可以指定一组共享存储卷。Pod 中的所有容器都可以访问共享卷，从而允许这些容器共享数据。卷还允许 Pod 中的持久数据在其中一个容器需要重新启动的情况下继续存在。有关 k8s 如何实现共享存储并使其可用于 Pods 的更多信息，请参见 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/storage/">Storage</a>。</p>
+<h3 id="Pod-networking"><a href="#Pod-networking" class="headerlink" title="Pod networking"></a>Pod networking</h3><p>为每个 Pod 分配一个地址族中唯一的 IP 地址。Pod 中的每个容器共享网络名称空间，包括 IP 地址和网络端口。在一个 Pod 中(只有这样)，属于 Pod 的容器才能使用本地主机与其他容器进行通信。当 Pod 中的容器与 Pod 外的实体通信时，它们必须协调如何使用共享网络资源(如端口)。在一个 Pod 中，容器共享一个 IP 地址和端口空间，并且可以通过本地主机找到彼此。Pod 中的容器还可以使用标准的进程间通信(如 SystemV 信号量或 POSIX 共享内存)相互通信。不同 Pod 中的容器有不同的 IP 地址，没有特殊的配置就不能通过 IPC 通信。希望与运行在不同 Pod 中的容器交互的容器可以使用 IP 网络进行通信。</p>
+<p>Pod 中的容器将看到系统主机名与配置的 Pod 名相同。在网络部分有更多关于这方面的内容。</p>
+<h3 id="Privileged-mode-for-containers"><a href="#Privileged-mode-for-containers" class="headerlink" title="Privileged mode for containers"></a>Privileged mode for containers</h3><p>Pod 中的任何容器都可以使用容器规范的安全上下文中的 privileged 标志启用特权模式。这对于希望使用操作系统管理功能(如操作网络堆栈或访问硬件设备)的容器非常有用。特权容器内的进程获得的特权几乎与容器外的进程获得的特权相同。</p>
+<p><strong>注意</strong>：容器运行时必须支持特权容器的概念，才能与此设置相关。</p>
+<h3 id="Static-Pods"><a href="#Static-Pods" class="headerlink" title="Static Pods"></a>Static Pods</h3><p>静态 pod 由特定节点上的 kubelet 守护进程直接管理，不需要 API 服务器观察它们。虽然大多数 Pod 是由控制平面管理的(例如，部署)，但是对于静态 Pod, kubelet 直接监督每个静态 Pod(并在它失败时重新启动它)。</p>
+<p>静态 Pods 总是绑定到特定节点上的一个 Kubelet。静态 Pods 的主要用途是运行一个自托管的控制层:换句话说，使用 kubelet 来监督各个控制层组件。</p>
+<p>kubelet 会自动尝试在 k8s API 服务器上为每个静态 Pod 创建一个镜像 Pod。这意味着在一个节点上运行的 Pods 在 API 服务器上是可见的，但不能从那里进行控制。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-knowledge/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/17/k8s-workload-knowledge/" class="post-title-link" itemprop="url">k8s-工作负载</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-17 15:23:24 / 修改时间：15:34:26" itemprop="dateCreated datePublished" datetime="2020-12-17T15:23:24+08:00">2020-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>工作负载是运行在 k8s 上的应用程序。无论您的工作负载是单个组件还是多个协同工作的组件，在 k8s 上，您都可以在一组 pod 中运行它。在 k8s 中，一个 Pod 表示集群上一组运行的容器。</p>
+<p>Pod 具有已定义的生命周期。例如，一旦一个 Pod 在集群中运行，那么该 Pod 所在节点上的一个严重故障意味着该节点上的所有 Pod 都失败了。k8s 将这种级别的故障视为最终级别:即使节点稍后恢复，也需要创建一个新的 Pod。</p>
+<p>但是，为了大大简化工作，您不需要直接管理每个 Pod。相反，可以使用代表您管理一组 pod 的工作负载资源。这些资源配置控制器，以确保正确种类的 Pod 的正确数量正在运行，以匹配您指定的状态。</p>
+<p>工作负载资源包括：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployment</a> 和 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/">ReplicaSet</a> (替换遗留资源 ReplicationController);</li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/">DaemonSet</a>（用于运行提供节点本地设备的 pod，如存储驱动程序或网络插件）</li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Job</a> 和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/">CronJob</a>。</li>
+</ul>
+<p>还有两个支持的概念，你可能会觉得相关:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/">Garbage collection</a>：在删除集群中拥有资源的对象后，对它们进行整理。</li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/">time-to-live after finished controller</a>：在作业完成后的定义时间过后，删除作业。</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-cluster-architecture-controller/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/17/k8s-cluster-architecture-controller/" class="post-title-link" itemprop="url">k8s-集群架构-控制器</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-17 13:37:10 / 修改时间：14:08:19" itemprop="dateCreated datePublished" datetime="2020-12-17T13:37:10+08:00">2020-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在机器人技术和自动化技术中，控制回路是调节系统状态的无终止回路。</p>
+<p>这是一个控制回路的例子:房间里的恒温器。</p>
+<p>当你设置温度时，它告诉恒温器你想要的状态。实际室温是当前的状态。恒温器的作用是打开或关闭设备，使当前状态更接近所需的状态。</p>
+<p>在 k8s 中，控制器是监控集群状态的控制循环，然后在需要的地方进行或请求更改。每个控制器都试图将当前集群状态移动到更接近期望状态的位置。</p>
+<h2 id="控制器模式"><a href="#控制器模式" class="headerlink" title="控制器模式"></a>控制器模式</h2><p>控制器跟踪至少一种 k8s 资源类型。这些对象有一个 spec 字段表示所需的状态。该资源的控制器负责使当前状态更接近所期望的状态。</p>
+<p>控制器可以自己执行动作;更常见的是，在 k8s 中，控制器将向 API server 发送具有有用副作用的消息。将在下面看到这样的示例。</p>
+<h3 id="基于-API-server-控制"><a href="#基于-API-server-控制" class="headerlink" title="基于 API server 控制"></a>基于 API server 控制</h3><p>Job 控制器是 k8s 内置控制器的一个例子。内置控制器通过与集群 API server 交互来管理状态。</p>
+<p>Job 是 k8s 资源，它运行一个 pod(可能是几个 pods)来执行一个任务，然后停止。</p>
+<p>(一旦调度成功，Pod 对象将成为 kubelet 所需状态的一部分)。</p>
+<p>当 Job 控制器获得一个新任务时，它将确保在集群中的某个位置，一组节点上的 kubelets 正在运行正确数量的 pod 以完成工作。Job 控制器本身不运行任何 pod 或容器。相反，Job 控制器告诉 API 服务器创建或删除 pod。控制层中的其他组件对新信息进行操作(有新的 pod 来调度和运行)，并最终完成工作。</p>
+<p>在创建新 Job 之后，期望的状态是该 Job 已完成。Job 控制器使该 Job 的当前状态更接近您想要的状态:创建 Pods 来完成您想要完成的工作，这样 Job 就更接近完成了。</p>
+<p>控制器还更新配置它们的对象。例如:一旦某一 Job 的工作完成，Job 控制器就更新该 Job 对象以标记它已完成。</p>
+<p>(这有点像恒温器关闭一盏灯，以显示房间现在的温度是你设定的)。</p>
+<h3 id="直接控制"><a href="#直接控制" class="headerlink" title="直接控制"></a>直接控制</h3><p>与 Job 相比，一些控制器需要对集群之外的事物进行更改。</p>
+<p>例如，如果使用控制循环来确保集群中有足够的节点，那么该控制器需要当前集群之外的某些东西来在需要时设置新节点。</p>
+<p>与外部状态交互的控制器从 API server 找到它们想要的状态，然后直接与外部系统通信，使当前状态更加一致。</p>
+<p>(实际上有一个控制器可以水平扩展集群中的节点。)</p>
+<p>这里重要的一点是，控制器进行一些更改以实现所需的状态，然后将当前状态报告回集群的 API server。其他控制循环可以观察报告的数据并采取自己的操作。</p>
+<p>在恒温器的例子中，如果房间非常冷，另一个控制器可能也会打开防冻加热器。通过 k8s 集群，控制层通过扩展 k8s 来间接地与 IP 地址管理工具、存储服务、云提供商 api 和其他服务协同工作。</p>
+<h2 id="期望状态和当前状态"><a href="#期望状态和当前状态" class="headerlink" title="期望状态和当前状态"></a>期望状态和当前状态</h2><p>k8s 从云计算的角度看待系统，能够应对不断的变化。</p>
+<p>在工作发生和控制回路自动修复故障时，您的集群随时可能发生更改。这意味着，您的集群可能永远不会达到稳定状态。</p>
+<p>只要集群的控制器在运行并能够进行有益的更改，那么总体状态是否稳定就无关紧要了。</p>
+<h2 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h2><p>作为其设计的原则，k8s 使用许多控制器，每个控制器管理集群状态的一个特定方面。最常见的是，一个特定的控制循环(控制器)使用一种资源作为它想要的状态，并拥有一种不同类型的资源，它管理这些资源使它想要的状态发生。例如，Job 控制器跟踪 Job 对象(以发现新 Job)和 Pod 对象(以运行 Job，然后查看 Job 何时完成)。在本例中，其他东西创建 Job，而 Job 控制器创建 pod。</p>
+<p>使用简单的控制器比使用一套单一的、相互连接的控制回路更有用。控制器可能会出现故障，所以 k8s 的设计允许这种情况发生。</p>
+<p><strong>注意</strong>：</p>
+<ul>
+<li><p>可以有多个控制器创建或更新同一类型的对象。在幕后，k8s 控制器确保只关注与控制资源相关联的资源。</p>
+</li>
+<li><p>例如，可以有 Deployments 和 Jobs;它们都可以创建了 pods。Job 控制器不会删除 Deployment 创建的 pod，因为控制器可以使用信息(标签)来区分这些 pod。</p>
+</li>
+</ul>
+<h2 id="运行控制器的方式"><a href="#运行控制器的方式" class="headerlink" title="运行控制器的方式"></a>运行控制器的方式</h2><p>k8s 自带一组运行在 kube-controller-manager 内部的内置控制器。这些内置控制器提供了重要的核心行为。</p>
+<p>Deployment 控制器和 Job 控制器是作为 k8s 自身一部分的控制器(内置控制器)的例子。k8s 允许你运行一个弹性控制层，这样如果任何内置控制器出现故障，控制层的另一部分将接管工作。</p>
+<p>你可以找到运行在控制层外的控制器，以扩展 k8s。或者，如果您愿意，您可以自己编写一个新的控制器。你可以运行你自己的控制器作为一组 Pods，或外部 k8s。什么最适合取决于特定控制器的操作。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-cluster-architecture-control-plane-node-communication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/12/17/k8s-cluster-architecture-control-plane-node-communication/" class="post-title-link" itemprop="url">k8s-集群架构-控制层与节点通信</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-17 13:06:46 / 修改时间：13:31:49" itemprop="dateCreated datePublished" datetime="2020-12-17T13:06:46+08:00">2020-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文对控制层(实际上是 apiserver)和 k8s 集群之间的通信路径进行了分类。其目的是允许用户自定义安装来加强网络配置，这样集群就可以运行在一个不可信的网络上(或在一个云提供商上的完全公共的 ip 上)。</p>
+<h2 id="节点到控制层"><a href="#节点到控制层" class="headerlink" title="节点到控制层"></a>节点到控制层</h2><p>k8s 有一个’中心辐射式’API 模式。来自节点(或它们运行的 pod)的所有 API 使用都在 apiserver 终止(其他控制层组件都不用于公开远程服务)。apiserver 被配置为侦听安全 HTTPS 端口(通常为 443)上的远程连接，并且启用了一种或多种形式的客户端身份验证。应该启用一种或多种形式的授权，特别是在允许匿名请求或服务帐户令牌的情况下。</p>
+<p>应该为节点提供集群的公共根证书，这样它们就可以使用有效的客户机凭证安全地连接到 apiserver。一种好的方法是，提供给 kubelet 的客户机凭据是以客户机证书的形式提供的。请参阅<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/">kubelet TLS bootstrapping</a>，以自动提供 kubelet 客户端证书。</p>
+<p>希望连接到 apiserver 的 pod 可以通过利用一个服务帐户安全地做到这一点，以便 k8s 在实例化 pod 时自动将公共根证书和有效的无记名令牌注入到 pod 中。k8s 服务(在所有命名空间中)都配置了一个虚拟 IP 地址，该地址被重定向(通过 kube-proxy)到 apiserver 上的 HTTPS 端点。</p>
+<p>控制层组件也通过安全端口与集群 apiserver 通信。</p>
+<p>因此，从节点和节点上运行的 pods 到控制层的连接的默认操作模式在缺省情况下是安全的，并且可以在不可信的以及公共网络上运行。</p>
+<h2 id="控制层到节点"><a href="#控制层到节点" class="headerlink" title="控制层到节点"></a>控制层到节点</h2><p>从控制层(apiserver)到节点有两条主要通信路径。第一个是从 apiserver 到 kubelet 进程，该进程在集群中的每个节点上运行。第二种是通过 apiserver 的代理功能从 apiserver 到任何 node、pod 或 service。</p>
+<h3 id="apiserver-到-kubelet"><a href="#apiserver-到-kubelet" class="headerlink" title="apiserver 到 kubelet"></a>apiserver 到 kubelet</h3><p>从 apiserver 到 kubelet 的连接用于:</p>
+<ul>
+<li>抓取 Pods 日志。</li>
+<li>(通过 kubectl)进入运行 Pods。</li>
+<li>提供 kubelet 的端口转发功能。</li>
+</ul>
+<p>这些连接在 kubelet 的 HTTPS 端点终止。默认情况下，apiserver 不验证 kubelet 的服务证书，这使得连接受到中间人攻击，并且在不受信任的和/或公共网络上运行是不安全的。</p>
+<p>要验证此连接，请使用–kubelet-certificate-authority 标志为 apiserver 提供根证书包，用于验证 kubelet 的服务证书。</p>
+<p>如果这是不可能的，请在需要时使用 apiserver 和 kubelet 之间的 SSH 隧道，以避免通过不可信的或公共的网络进行连接。</p>
+<p>最后，应该启用 Kubelet 身份验证和/或授权来保护 Kubelet API。</p>
+<h3 id="apiserver-到-nodes，pods-和-services"><a href="#apiserver-到-nodes，pods-和-services" class="headerlink" title="apiserver 到 nodes，pods 和 services"></a>apiserver 到 nodes，pods 和 services</h3><p>从 apiserver 到节点、pod 或服 service 的连接默认为纯 HTTP 连接，因此既没有经过身份验证也没有加密。他们可以运行在一个安全的 HTTPS 连接通过加前缀 HTTPS:node,pod,或 service 名称的 API URL,但他们不会验证证书提供的 HTTPS 端点也提供客户端凭证所以当连接将被加密,它不会提供任何担保的完整性。这些连接当前在不受信任和/或公共网络上运行是不安全的。</p>
+<h3 id="ssh-隧道"><a href="#ssh-隧道" class="headerlink" title="ssh 隧道"></a>ssh 隧道</h3><p>k8s 支持 SSH 隧道，以保护控制层到节点的通信路径。在此配置中，apiserver 启动一个 SSH 通道到集群中的每个节点(连接到侦听端口 22 的 SSH 服务器)，并通过通道传递所有以 kubelet、node、pod 或 service 为目的地的流量。这个隧道确保了通信量不会暴露在正在运行的节点所在的网络之外。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -579,809 +1311,6 @@
 <p>例如，这是一个有注释(imageregistry: <a target="_blank" rel="noopener" href="https://hub.docker.com/)%E7%9A%84Pod%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6">https://hub.docker.com/)的Pod配置文件</a>:</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">annotations-demo</span></span><br><span class="line">  <span class="attr">annotations:</span></span><br><span class="line">    <span class="attr">imageregistry:</span> <span class="string">&quot;https://hub.docker.com/&quot;</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx:1.14.2</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-label-and-selector/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/10/k8s-objects-label-and-selector/" class="post-title-link" itemprop="url">k8s-对象标签和选择器</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2020-12-10 14:21:13" itemprop="dateCreated datePublished" datetime="2020-12-10T14:21:13+08:00">2020-12-10</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-12-11 16:25:13" itemprop="dateModified" datetime="2020-12-11T16:25:13+08:00">2020-12-11</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>标签是一个附加到对象（比如：Pods）上的键值对。标签用于指定对用户有意义和相关的对象的标识属性，但不直接暗示核心系统的语义。标签可以用来组织和选择对象的子集。标签可以在创建时附加到对象上，然后在任何时候添加和修改。每个对象定义一个键值对标签集合。对于每个对象键必须是唯一的。</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&quot;metadata&quot;: &#123;</span><br><span class="line">  &quot;labels&quot;: &#123;</span><br><span class="line">    &quot;key1&quot; : &quot;value1&quot;,</span><br><span class="line">    &quot;key2&quot; : &quot;value2&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>标签支持有效的查询和监视，非常适合在 ui 和 CLIs 中使用。非识别信息应该使用<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/">注释</a>。</p>
-<h2 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h2><p>标签使用户能够以松散耦合的方式将自己的组织结构映射到系统对象上，而不需要客户端存储这些映射。</p>
-<p>服务部署和批处理管道通常是多维实体(例如，多个分区或部署、多个发布轨道、多个层、每层有多个微服务)。管理经常需要横切操作，这打破了严格层次结构表示的封装，特别是由基础设施而不是用户决定的严格层次结构。</p>
-<p>标签示例：</p>
-<ul>
-<li>“release” : “stable”, “release” : “canary”</li>
-<li>“environment” : “dev”, “environment” : “qa”, “environment” : “production”</li>
-<li>“tier” : “frontend”, “tier” : “backend”, “tier” : “cache”</li>
-<li>“partition” : “customerA”, “partition” : “customerB”</li>
-<li>“track” : “daily”, “track” : “weekly”</li>
-</ul>
-<p>这些只是常用标签的例子;你可以自由发展自己的习惯。请记住，label 键对于给定对象必须是唯一的。</p>
-<h2 id="语法和字符集"><a href="#语法和字符集" class="headerlink" title="语法和字符集"></a>语法和字符集</h2><p>标签是键值对。有效的标签键有两个段:可选的前缀和名称，由斜杠（/）分隔。<br>名称段是必需的，且必须小于 63 个字符，开头和结尾为字母数字字符([a-z0-9A-Z])，中间有破折号(-)、下划线(_)、点号(.)和字母数字。前缀是可选的。如果指定，前缀必须是一个 DNS 子域:由点(.)分隔的一系列 DNS 标签，总长度不超过 253 个字符，后跟斜杠（/）。</p>
-<p>如果省略了前缀，则认为 label 键是用户私有的。向最终用户对象添加标签的自动化系统组件(例如 kube-scheduler、kube-controller-manager、kube-apiserver、kubectl 或其他第三方自动化)必须指定一个前缀。</p>
-<p>kubernetes.io/和 k8s.io/前缀是为 k8s 核心组件保留的。</p>
-<p>有效的标签值必须小于 63 个字符，并且必须为空，或者以字母数字字符([a-z0-9A-Z])开始和结束，字符之间有破折号(-)、下划线(_)、点号(.)和字母数字。</p>
-<p>例如，下面是一个 Pod 的配置文件，它有两个标签 environment:production 和 app:nginx：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">label-demo</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">environment:</span> <span class="string">production</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">      <span class="attr">image:</span> <span class="string">nginx:1.14.2</span></span><br><span class="line">      <span class="attr">ports:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="标签选择器"><a href="#标签选择器" class="headerlink" title="标签选择器"></a>标签选择器</h2><p>与名称和 uid 不同，标签不提供惟一性。通常，我们希望许多对象都带有相同的标签。</p>
-<p>通过标签选择器，客户端（用户）可以识别一个对象集合。标签选择器是 K8s 中的核心分组原语。</p>
-<p>API 目前支持两种类型的选择器:基于等式的选择器和基于集合的选择器。标签选择器可以由逗号分隔的多个条件组成。在有多个条件的情况下，必须满足所有条件，因此逗号分隔符充当逻辑和(&amp;&amp;)操作符。</p>
-<p>空的或未指定的选择器的语义依赖于上下文，使用选择器的 API 类型应该记录它们的有效性和意义。</p>
-<p><strong>注意</strong>：对于某些 API 类型，比如 replicaset，两个实例的标签选择器不能在一个名称空间内重叠，否则控制器会将其视为相互冲突的指令，从而无法确定应该出现多少个副本。</p>
-<p><strong>警告</strong>：对于基于等式和基于集合的条件，没有逻辑 OR(||)操作符。确保过滤器语句的结构是相应的。</p>
-<h3 id="相等条件"><a href="#相等条件" class="headerlink" title="相等条件"></a>相等条件</h3><p>基于相等或不相等的条件允许根据标签键和值进行过滤。匹配对象必须满足所有指定的标签约束，尽管它们也可能有额外的标签。允许使用三种操作符=、==、!=。前两个表示相等(只是同义词)，而后一个表示不相等。例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">environment = production</span><br><span class="line">tier != frontend</span><br></pre></td></tr></table></figure>
-
-<p>前者选择一切以 environment 为键、值为 production 的资源。后者选择键 tier 对应值不等于 frontend 的所有资源，以及所有没有带 tier 键标签的资源。可以使用逗号分隔符过滤在 production 环境但是不包含 frontend 的资源，比如：environment=production,tier!=frontend</p>
-<p>基于相等的标签条件的一个使用场景是让 Pods 指定节点选择标准。例如，下面的示例 Pod 选择标签为“accelerator=nvidia-tesla-p100”的节点。</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">cuda-test</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">cuda-test</span></span><br><span class="line">      <span class="attr">image:</span> <span class="string">&quot;k8s.gcr.io/cuda-vector-add:v0.1&quot;</span></span><br><span class="line">      <span class="attr">resources:</span></span><br><span class="line">        <span class="attr">limits:</span></span><br><span class="line">          <span class="attr">nvidia.com/gpu:</span> <span class="number">1</span></span><br><span class="line">  <span class="attr">nodeSelector:</span></span><br><span class="line">    <span class="attr">accelerator:</span> <span class="string">nvidia-tesla-p100</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="集合条件"><a href="#集合条件" class="headerlink" title="集合条件"></a>集合条件</h3><p>基于集的标签条件允许根据一组值过滤键。支持三种操作符:in、notin 和 exists(仅为键标识符)。例如：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">environment in (production, qa)</span><br><span class="line">tier notin (frontend, backend)</span><br><span class="line">partition</span><br><span class="line">!partition</span><br></pre></td></tr></table></figure>
-
-<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><p>URL 请求：</p>
-<ul>
-<li>相等条件: ?labelSelector=environment%3Dproduction,tier%3Dfrontend</li>
-<li>集合条件: ?labelSelector=environment+in+%28production%2Cqa%29%2Ctier+in+%28frontend%29</li>
-</ul>
-<p>kubectl 指令:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods -l environment=production,tier=frontend</span><br><span class="line">kubectl get pods -l &#x27;environment in (production),tier in (frontend)&#x27;</span><br><span class="line">kubectl get pods -l &#x27;environment in (production, qa)&#x27;</span><br><span class="line">kubectl get pods -l &#x27;environment,environment notin (frontend)&#x27;</span><br></pre></td></tr></table></figure>
-
-<h3 id="设置-API-对象引用"><a href="#设置-API-对象引用" class="headerlink" title="设置 API 对象引用"></a>设置 API 对象引用</h3><p>一些 k8s 对象(比如<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/services-networking/service/">services</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller/">replicationcontrollers</a>)通过标签选择器查找其他资源（比如 Pods）</p>
-<h3 id="Service-和-ReplicationController"><a href="#Service-和-ReplicationController" class="headerlink" title="Service 和 ReplicationController"></a>Service 和 ReplicationController</h3><p>服务目标的 pods 集是用标签选择器定义的。类似地，replicationcontroller 应该管理的 pods 的填充也使用标签选择器定义。</p>
-<p>这两个对象的标签选择器使用映射在 json 或 yaml 文件中定义，并且只支持基于平等的需求选择器：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;selector&quot;: &#123;</span><br><span class="line">    &quot;component&quot; : &quot;redis&quot;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>或者：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">selector:</span></span><br><span class="line">  <span class="attr">component:</span> <span class="string">redis</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="资源也支持集合条件"><a href="#资源也支持集合条件" class="headerlink" title="资源也支持集合条件"></a>资源也支持集合条件</h3><p>最新的资源，比如<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Job</a>，Deployment，ReplicaSet，和 DaemonSet 支持集合条件。</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">selector:</span></span><br><span class="line">  <span class="attr">matchLabels:</span></span><br><span class="line">    <span class="attr">component:</span> <span class="string">redis</span></span><br><span class="line">  <span class="attr">matchExpressions:</span></span><br><span class="line">    <span class="bullet">-</span> &#123; <span class="attr">key:</span> <span class="string">tier</span>, <span class="attr">operator:</span> <span class="string">In</span>, <span class="attr">values:</span> [<span class="string">cache</span>] &#125;</span><br><span class="line">    <span class="bullet">-</span> &#123; <span class="attr">key:</span> <span class="string">environment</span>, <span class="attr">operator:</span> <span class="string">NotIn</span>, <span class="attr">values:</span> [<span class="string">dev</span>] &#125;</span><br></pre></td></tr></table></figure>
-
-<p>matchLabels 是{key,value}对的映射。matchLabels 映射中的单个{key,value}等价于 matchexpression 中的一个元素，该元素的键字段为“key”，操作符为“in”，而 values 数组只包含“value”。matchexpression 是 pod 选择器需求的列表。有效的操作符包括 In、NotIn、Exists 和 DoesNotExist。对于 in 和 NotIn，设置的值必须是非空的。匹配标签和匹配表达式的所有要求都是用沙子处理在一起的——为了进行匹配，它们都必须得到满足。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-namespace/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/10/k8s-objects-namespace/" class="post-title-link" itemprop="url">k8s-objects-namespace</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-10 13:54:54 / 修改时间：14:19:11" itemprop="dateCreated datePublished" datetime="2020-12-10T13:54:54+08:00">2020-12-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>k8s 支持由同一物理集群支持的多个虚拟集群。这些虚拟集群称为 namespaces。</p>
-<h2 id="何时使用多个命名空间"><a href="#何时使用多个命名空间" class="headerlink" title="何时使用多个命名空间"></a>何时使用多个命名空间</h2><p>namespace 用于跨多个团队或项目有许多用户的环境中。对于有几个到几十个用户的集群，您根本不需要创建或考虑 namespace。当您需要 namespace 提供的特性时，请开始使用 namespace。</p>
-<p>namespace 为名称提供一个作用域。资源的名称在 namespace 内必须是惟一的，但不能跨 namespace。namespace 不能相互嵌套，每个 k8s 资源只能在一个 namespace 中。</p>
-<p>namespace 是在多个用户之间划分集群资源的一种方式。</p>
-<p>没有必要使用多个 namespace 来分隔稍微不同的资源，例如同一软件的不同版本:使用标签来区分同一 namespace 内的资源。</p>
-<h2 id="使用命名空间"><a href="#使用命名空间" class="headerlink" title="使用命名空间"></a>使用命名空间</h2><p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/namespaces">命名空间管理指南文档</a>中描述了命名空间的创建和删除。</p>
-<p><strong>注意</strong>：避免创建前缀为 kube-的命名空间，因为它是为 k8s 系统命名空间保留的。</p>
-<h3 id="查看命名空间"><a href="#查看命名空间" class="headerlink" title="查看命名空间"></a>查看命名空间</h3><p>可以列出集群中当前命名空间：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get namespace</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">NAME              STATUS   AGE</span><br><span class="line">default           Active   1d</span><br><span class="line">kube-node-lease   Active   1d</span><br><span class="line">kube-public       Active   1d</span><br><span class="line">kube-system       Active   1d</span><br></pre></td></tr></table></figure>
-
-<p>K8s 从四个初始命名空间开始：</p>
-<ul>
-<li>default：没有其他命名空间资源的默认命名空间。</li>
-<li>kube-system：k8s 系统为对象创建的命名空间。</li>
-<li>kube-public：此命名空间是自动创建的，所有用户(包括未经过身份验证的用户)都可读。这个命名空间主要是为集群使用保留的，以防某些资源在整个集群中是可见的和可读的。这个命名空间的公共方面只是一种约定，而不是要求。</li>
-<li>kube-node-lease：这个命名空间用于与每个节点关联的租赁对象，它可以随着集群的扩展提高节点的性能。</li>
-</ul>
-<h3 id="为请求设置命名空间"><a href="#为请求设置命名空间" class="headerlink" title="为请求设置命名空间"></a>为请求设置命名空间</h3><p>可以使用–namespace标志为当前请求设置命名空间。</p>
-<p>例如：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl run nginx --image=nginx --namespace=&lt;insert-namespace-name-here&gt;</span><br><span class="line">kubectl get pods --namespace=&lt;insert-namespace-name-here&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="设置命名空间首选项"><a href="#设置命名空间首选项" class="headerlink" title="设置命名空间首选项"></a>设置命名空间首选项</h3><p>您可以在该上下文中永久保存所有后续kubectl命令的命名空间。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl config set-context --current --namespace=&lt;insert-namespace-name-here&gt;</span><br><span class="line"><span class="meta">#</span><span class="bash"> Validate it</span></span><br><span class="line">kubectl config view --minify | grep namespace:</span><br></pre></td></tr></table></figure>
-
-<h3 id="命名空间和DNS"><a href="#命名空间和DNS" class="headerlink" title="命名空间和DNS"></a>命名空间和DNS</h3><p>当您创建一个服务时，它会创建一个相应的DNS条目。此条目的形式为<service-name>.<namespace-name>.vcs.cluster.local，这意味着如果容器只使用<service-name>，它将解析为一个命名空间本地的服务。这对于跨多个命名空间(如开发、登台和生产)使用相同的配置非常有用。如果希望跨命名空间访问，则需要使用完全限定域名(FQDN)。</p>
-<h3 id="并非所有对象都在名称空间中"><a href="#并非所有对象都在名称空间中" class="headerlink" title="并非所有对象都在名称空间中"></a>并非所有对象都在名称空间中</h3><p>大多数k8s资源(例如pods、服务、复制控制器和其他资源)都位于某些命名空间中。然而，命令空间资源本身并不在命名空间中。底层资源，比如节点和persistentvolume，不存在于任何命名空间中。</p>
-<p>查看哪些Kubernetes资源在名称空间中，哪些不在：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> In a namespace</span></span><br><span class="line">kubectl api-resources --namespaced=true</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Not <span class="keyword">in</span> a namespace</span></span><br><span class="line">kubectl api-resources --namespaced=false</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-name-and-id/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/10/k8s-objects-name-and-id/" class="post-title-link" itemprop="url">k8s-对象名称和ID</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-10 13:35:11 / 修改时间：13:51:47" itemprop="dateCreated datePublished" datetime="2020-12-10T13:35:11+08:00">2020-12-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>集群中的每个对象都有一个针对该类型资源的惟一名称。每个 k8s 对象还有一个在整个集群中唯一的 UID。</p>
-<p>例如，在同一个名称空间中只能有一个名为 myapp-1234 的 Pod，但是可以有一个名为 myapp-1234 的 Pod 和一个 Deployment。</p>
-<p>对于用户提供的非唯一属性，k8s 提供<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">标签</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/">注释</a>。</p>
-<h2 id="Names"><a href="#Names" class="headerlink" title="Names"></a>Names</h2><p>客户端提供的引用资源 URL 中的对象的字符串，例如：/api/v1/pods/some-name。</p>
-<p>一次只能有一个给定类型的对象具有给定名称。但是，如果删除该对象，则可以创建具有相同名称的新对象。</p>
-<p>下面是三种常用的资源名称约束。</p>
-<h3 id="DNS-Subdomain-Names"><a href="#DNS-Subdomain-Names" class="headerlink" title="DNS Subdomain Names"></a>DNS Subdomain Names</h3><p>大多数资源类型需要一个可以作为 RFC 1123 中定义的 DNS 子域名的名称。这意味着名称必须：</p>
-<ul>
-<li>包含不超过 253 个字符</li>
-<li>只包含小写字母数字字符，’-‘或’.’。</li>
-<li>以字母数字字符开始。</li>
-<li>以字母数字字符结束。</li>
-</ul>
-<h3 id="DNS-Label-Names"><a href="#DNS-Label-Names" class="headerlink" title="DNS Label Names"></a>DNS Label Names</h3><p>一些资源类型要求它们的名称遵循 RFC 1123 中定义的 DNS 标签标准。这意味着名称必须：</p>
-<ul>
-<li>最多包含 63 个字符</li>
-<li>只包含小写字母数字字符或“-”</li>
-<li>以字母数字字符开始。</li>
-<li>以字母数字字符结束。</li>
-</ul>
-<h3 id="Path-Segment-Names"><a href="#Path-Segment-Names" class="headerlink" title="Path Segment Names"></a>Path Segment Names</h3><p>些资源类型要求它们的名称能够安全地编码为路径段。换句话说，名字可能不是“.”或“..”，也不能包含“/”和“%”。</p>
-<p><strong>注意</strong>：有些资源类型对它们的名称有额外的限制。</p>
-<h2 id="UIDs"><a href="#UIDs" class="headerlink" title="UIDs"></a>UIDs</h2><p>k8s 系统生成的惟一标识对象的字符串。</p>
-<p>在 k8s 集群的整个生命周期中创建的每个对象都有一个独特的 UID。它的目的是区分历史上发生的类似实体。</p>
-<p>k8s 的 uid 是普遍唯一的标识符(也称为 uuid)。uuid 被标准化为 ISO/IEC 9834-8 和 ITU-T X.667。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-management/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/10/k8s-objects-management/" class="post-title-link" itemprop="url">k8s-objects-management</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-10 11:02:14 / 修改时间：14:13:45" itemprop="dateCreated datePublished" datetime="2020-12-10T11:02:14+08:00">2020-12-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>kubectl 命令行工具支持几种不同的方法来创建和管理 k8s 对象。本文档提供了不同方法的概述。阅读<a target="_blank" rel="noopener" href="https://kubectl.docs.kubernetes.io/">Kubectl book</a>，了解 Kubectl 管理对象的细节。</p>
-<h2 id="管理方法"><a href="#管理方法" class="headerlink" title="管理方法"></a>管理方法</h2><p><strong>注意</strong>：k8s 对象应该只使用一种技术进行管理。同一对象的混合和匹配技术会导致未知的行为。</p>
-<table>
-<thead>
-<tr>
-<th align="center">Management technique</th>
-<th align="center">Operates on</th>
-<th align="center">Recommended environment</th>
-<th align="center">Supported writers</th>
-<th align="center">Learning curve</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">Imperative commands</td>
-<td align="center">Live objects</td>
-<td align="center">Development projects</td>
-<td align="center">1+</td>
-<td align="center">Lowest</td>
-</tr>
-<tr>
-<td align="center">Imperative object configuration</td>
-<td align="center">Individual files</td>
-<td align="center">Production projects</td>
-<td align="center">1</td>
-<td align="center">Moderate</td>
-</tr>
-<tr>
-<td align="center">Declarative object configuration</td>
-<td align="center">Directories of files</td>
-<td align="center">Production projects</td>
-<td align="center">1+</td>
-<td align="center">Highest</td>
-</tr>
-</tbody></table>
-<h2 id="命令行指令"><a href="#命令行指令" class="headerlink" title="命令行指令"></a>命令行指令</h2><p>在使用命令行指令时，用户直接操作集群中的活动对象。用户将操作作为参数或标志提供给 kubectl 指令。</p>
-<p>这是在集群中启动或运行一次性任务的最简单方法。由于此技术直接在活动对象上操作，因此不提供以前配置的历史记录。</p>
-<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><p>通过创建一个部署对象来运行 nginx 容器的实例：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create deployment nginx --image nginx</span><br></pre></td></tr></table></figure>
-
-<h3 id="比较"><a href="#比较" class="headerlink" title="比较"></a>比较</h3><p>与对象配置相比的优势：</p>
-<ul>
-<li>命令很简单，容易学习和记忆。</li>
-<li>命令只需要一个步骤就可以对集群进行更改。</li>
-</ul>
-<p>与对象配置相比的缺点：</p>
-<ul>
-<li>命令不能与变更审查过程集成。</li>
-<li>命令不提供与更改关联的审计跟踪。</li>
-<li>命令不提供记录源，除了活动的记录。</li>
-<li>命令不提供创建新对象的模板。</li>
-</ul>
-<h2 id="命令式对象配置"><a href="#命令式对象配置" class="headerlink" title="命令式对象配置"></a>命令式对象配置</h2><p>在命令式对象配置中，kubectl 命令指定操作(创建、替换等)、可选标志和至少一个文件名。指定的文件必须包含 YAML 或 JSON 格式的对象的完整定义。</p>
-<p><strong>注意</strong>：命令式的 replace 命令用新提供的规范替换现有规范，删除配置文件中缺少的对对象的所有更改。这种方法不应该用于规范独立于配置文件更新的资源类型。例如，LoadBalancer 类型的服务将独立于集群的配置更新其 externalIPs 字段。</p>
-<h3 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h3><p>创建一个定义在配置文件中的对象：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f nginx.yaml</span><br></pre></td></tr></table></figure>
-
-<p>删除在两个配置文件中定义的对象：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl delete -f nginx.yaml -f redis.yaml</span><br></pre></td></tr></table></figure>
-
-<p>通过覆盖在线配置升级由配置定义的对象：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl replace -f nginx.yaml</span><br></pre></td></tr></table></figure>
-
-<h3 id="比较-1"><a href="#比较-1" class="headerlink" title="比较"></a>比较</h3><p>与命令式指令相比的优势：</p>
-<ul>
-<li>对象配置可以存储在 Git 等源代码控制系统中。</li>
-<li>对象配置可以与过程集成，例如在推送前检查更改和审计跟踪。</li>
-<li>对象配置提供了创建新对象的模板。</li>
-</ul>
-<p>与命令式指令相比的缺点：</p>
-<ul>
-<li>对象配置需要对对象模式有基本的了解。</li>
-<li>对象配置需要额外的步骤来编写 YAML 文件。</li>
-</ul>
-<p>与声明式对象配置相比的优点：</p>
-<ul>
-<li>命令式对象配置行为更简单，更容易理解。</li>
-<li>在 k8s 1.5 版本中，命令式对象配置更加成熟。</li>
-</ul>
-<p>与声明式对象配置相比的缺点:</p>
-<ul>
-<li>命令式对象配置最适合文件，而不是目录。</li>
-<li>对活动对象的更新必须反映在配置文件中，否则它们将在下一次替换时丢失。</li>
-</ul>
-<h2 id="声明式对象配置"><a href="#声明式对象配置" class="headerlink" title="声明式对象配置"></a>声明式对象配置</h2><p>当使用声明式对象配置时，用户操作本地存储的对象配置文件，但是用户不定义要对文件执行的操作。kubectl 会自动检测每个对象的创建、更新和删除操作。这允许在目录上工作，不同的对象可能需要不同的操作。</p>
-<p><strong>注意</strong>：声明式对象配置保留其他编写者所做的更改，即使这些更改没有合并回对象配置文件。这可以通过使用 patch API 操作来只编写观察到的差异，而不是使用 replace API 操作来替换整个对象配置来实现。</p>
-<h3 id="示例-2"><a href="#示例-2" class="headerlink" title="示例"></a>示例</h3><p>处理configs目录中的所有对象配置文件，并创建或修补活动对象。可以首先进行diff来查看将要进行的更改，然后应用：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl diff -f configs/</span><br><span class="line">kubectl apply -f configs/</span><br></pre></td></tr></table></figure>
-
-<p>递归处理目录：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl diff -R -f configs/</span><br><span class="line">kubectl apply -R -f configs/</span><br></pre></td></tr></table></figure>
-
-<h3 id="比较-2"><a href="#比较-2" class="headerlink" title="比较"></a>比较</h3><p>与命令式对象配置相比的优势：</p>
-<ul>
-<li>直接对活动对象所做的更改将被保留，即使它们没有合并回配置文件中。</li>
-<li>声明式对象配置更好地支持对每个对象进行目录操作和自动检测操作类型(创建、修补、删除)。</li>
-</ul>
-<p>与命令式对象配置相比的缺点：</p>
-<ul>
-<li>声明式对象配置更难调试和理解意外的结果。</li>
-<li>使用diffs的部分更新创建复杂的合并和补丁操作。</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-objects-knowledge/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/10/k8s-objects-knowledge/" class="post-title-link" itemprop="url">k8s-对象</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-10 09:53:32 / 修改时间：10:57:05" itemprop="dateCreated datePublished" datetime="2020-12-10T09:53:32+08:00">2020-12-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>这个页面解释了 k8s 对象如何在 k8s API 中表示，以及如何用.yaml 格式表示它们。</p>
-<h2 id="理解-k8s-对象"><a href="#理解-k8s-对象" class="headerlink" title="理解 k8s 对象"></a>理解 k8s 对象</h2><p>k8s 对象是 k8s 系统中的持久化实体。k8s 使用这些实体来表示集群的状态。具体来说，他们可以描述：</p>
-<ul>
-<li>哪种容器应用在运行（在哪个节点）</li>
-<li>应用资源可用性</li>
-<li>应用策略，比如重启、升级和容错</li>
-</ul>
-<p>k8s 对象是一个“意图记录”，一旦您创建了对象，k8s 系统将不断工作以确保对象的存在。通过创建对象，可以有效地告诉 k8s 系统希望集群的工作负载是什么样子;这是集群所需的状态。</p>
-<p>要使用 k8s 对象，无论是创建、修改还是删除它们——都需要使用 k8s API。例如，当使用 kubectl 命令行接口时，CLI 会为您进行必要的 k8s API 调用。还可以在程序中使用其中一个客户端库直接使用 k8s API。</p>
-<h2 id="对象-spec-和-status"><a href="#对象-spec-和-status" class="headerlink" title="对象 spec 和 status"></a>对象 spec 和 status</h2><p>几乎每个 k8s 对象都包含两个嵌套的对象字段，它们管理对象的配置:object spec 和 object status。对于具有 spec 的对象，您必须在创建对象时对其进行设置，提供您希望资源具有的特征的描述:它的期望状态。</p>
-<p>status 描述对象的当前状态，由 k8s 系统及其组件提供和更新。K8s 控制层持续地、积极地管理每个对象的实际状态，以匹配您提供的所需状态。</p>
-<p>例如:在 k8s 中，部署是表示集群上运行的应用程序的对象。在创建部署时，可以设置部署 spec，以指定要运行应用程序的三个副本。K8s 系统读取部署 spec 并开始的三个实例所需的应用程序——更新状态以匹配您的 spec。如果这些实例失败(状态改变),K8s 系统响应 spec 之间的差异和状态进行校正,在这种情况下,开始替代实例。</p>
-<p>有关对象 spec、status 和 metadata 的更多信息，请参见 k8s API 约定。</p>
-<h2 id="描述-k8s-对象"><a href="#描述-k8s-对象" class="headerlink" title="描述 k8s 对象"></a>描述 k8s 对象</h2><p>在 k8s 中创建对象时，必须提供描述其所需状态的对象 spec，以及关于对象的一些基本信息(如名称)。当使用 k8s API 创建对象时(直接或通过 kubectl)，该 API 请求必须在请求主体中以 JSON 的形式包含该信息。通常，您在.yaml 文件中向 kubectl 提供信息。kubectl 在发出 API 请求时将信息转换为 JSON。</p>
-<p>下面是一个示例.yaml 文件，它显示了 Kubernetes 部署所需的字段和对象规范：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span> <span class="comment"># for versions before 1.9.0 use apps/v1beta2</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx-deployment</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">2</span> <span class="comment"># tells deployment to run 2 pods matching the template</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">          <span class="attr">image:</span> <span class="string">nginx:1.14.2</span></span><br><span class="line">          <span class="attr">ports:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
-
-<p>使用像上面那样的.yaml 文件创建部署的一种方法是在 kubectl 命令行界面中使用 kubectl apply 命令，将.yaml 文件作为参数传递。这里有一个例子：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://k8s.io/examples/application/deployment.yaml --record</span><br></pre></td></tr></table></figure>
-
-<p>输出类似：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">deployment.apps/nginx-deployment created</span><br></pre></td></tr></table></figure>
-
-<h3 id="必填属性"><a href="#必填属性" class="headerlink" title="必填属性"></a>必填属性</h3><p>在要创建的 k8s 对象的.yaml 文件中，需要为以下字段设置值：</p>
-<ul>
-<li>apiVersion：创建对象时使用的 k8s API 版本</li>
-<li>kind: 想要创建的资源类型</li>
-<li>metadata：帮助惟一标识对象的数据，包括名称字符串、UID 和可选命名空间</li>
-<li>spec：描述对象的状态</li>
-</ul>
-<p>每个 k8s 对象的对象规范的精确格式都不同，并且包含特定于该对象的嵌套字段。<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/">k8s API reference</a>可以帮助您找到可以使用 k8s 创建的所有对象的规范格式。例如，Pod 的规范格式可以在 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core">PodSpec v1 core</a> 中找到，而部署的规范格式可以在 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#deploymentspec-v1-apps">DeploymentSpec v1 apps</a> 中找到。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/10/k8s-api-server/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/10/k8s-api-server/" class="post-title-link" itemprop="url">k8s-api-server</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-10 09:09:05 / 修改时间：09:51:45" itemprop="dateCreated datePublished" datetime="2020-12-10T09:09:05+08:00">2020-12-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>k8s 控制平台的核心是 API server， API server 暴露 HTTP API 给终端用户、集群中的不同部分以及组件之间的通信。</p>
-<p>k8s API 允许你查询和操作 k8s API 中对象（例如：Pods、Namespaces、ConfigMaps 和 Events）的状态。</p>
-<p>大多数操作可以通过 kubectl 命令行工具或者其他命令行工具（比如：kubeadm）执行。当然你也可以直接通过 REST 调用执行 API。</p>
-<h2 id="OpenAPI-规范"><a href="#OpenAPI-规范" class="headerlink" title="OpenAPI 规范"></a>OpenAPI 规范</h2><p>使用 OpenAPI 记录完整的 API 文档。</p>
-<p>k8s API 提供一个以/openapi/v2 为端点的 OpenAPI。可以通过在请求头里加入以下数据来获取对应的响应格式：</p>
-<table>
-<thead>
-<tr>
-<th align="left">Header</th>
-<th align="left">Possible values</th>
-<th align="left">Notes</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">Accept-Encoding</td>
-<td align="left">gzip</td>
-<td align="left">not supplying this header is also acceptable</td>
-</tr>
-<tr>
-<td align="left">Accept</td>
-<td align="left">application/com.github.proto-openapi.spec.v2@v1.0+protobuf</td>
-<td align="left">mainly for intra-cluster use</td>
-</tr>
-<tr>
-<td align="left">Accept</td>
-<td align="left">application/json</td>
-<td align="left">default</td>
-</tr>
-<tr>
-<td align="left">Accept</td>
-<td align="left">*</td>
-<td align="left">serves application/json</td>
-</tr>
-</tbody></table>
-<p>Kubernetes 实现了一种替代的基于 Protobuf 的序列化格式，主要用于集群内通信。</p>
-<h2 id="持久化"><a href="#持久化" class="headerlink" title="持久化"></a>持久化</h2><p>k8s 通过将对象的序列化状态保存到 etcd 中完成持久化操作。</p>
-<h2 id="API-分组和版本"><a href="#API-分组和版本" class="headerlink" title="API 分组和版本"></a>API 分组和版本</h2><p>为了更容易地消除字段或重构资源表示，k8s 支持多个 API 版本，每个版本在不同的 API 路径上，例如：/api/v1 or /apis/rbac.authorization.k8s.io/v1alpha1。</p>
-<p>版本控制是在 API 级别而不是在资源或属性级别进行的，以确保 API 提供对系统资源和行为的清晰、一致的视图，并支持对生命周期以及实验 API 的控制访问。</p>
-<p>为了使它更容易发展和扩展它的 API, k8s 实现了可以启用或禁用的 API 组。</p>
-<p>API 资源由它们的 API 组、资源类型、命名空间(命令空间内的资源)和名称来区分。API 服务器透明地处理 API 版本之间的转换:所有不同版本实际上是相同持久化数据的表示。API 服务器可以通过多个 API 版本提供相同的底层数据。</p>
-<p>例如，假设对于同一资源有两个 API 版本，v1 和 v1beta1。如果最初使用 v1beta1 版本的 API 创建对象，那么以后可以使用 v1beta1 或 v1 API 版本读取、更新或删除该对象。</p>
-<h3 id="API-变更"><a href="#API-变更" class="headerlink" title="API 变更"></a>API 变更</h3><p>任何成功的系统都需要随着新应用场景出现或现有应用场景的变化而成长和变化。因此，k8s 设计了 k8s API 来不断变化和增长。k8s 项目的目标是不破坏与现有客户机的兼容性，并在一段时间内保持这种兼容性，以便其他项目有机会进行调整。</p>
-<p>通常，可以经常地添加新的 API 资源和新的资源字段。删除资源或字段需要遵循 API 弃用策略。</p>
-<p>k8s 强烈承诺，一旦官方 k8s API 达到通用可用性(GA)，就会维护其兼容性，通常是在 API 版本 v1。此外，k8s 在可行的情况下保持了 beta API 版本的兼容性:如果采用 beta API，即使在特性稳定之后，也可以继续使用该 API 与集群交互。</p>
-<p><strong>注意</strong>：尽管 k8s 还致力于维护 alpha api 版本的兼容性，但在某些情况下，这是不可能的。如果您使用任何 alpha API 版本，请在升级集群时检查 k8s 的发布说明，以防 API 发生更改。</p>
-<h2 id="API-扩展"><a href="#API-扩展" class="headerlink" title="API 扩展"></a>API 扩展</h2><p>k8s API 可以通过以下两种方式进行扩展：</p>
-<ul>
-<li>自定义资源允许您以声明的方式定义 API 服务器应该如何提供所选资源 API。</li>
-<li>还可以通过实现聚合层来扩展 k8s API。</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/09/k8s-feature-gates/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="浅秋之枫">
-      <meta itemprop="description" content="随堂笔记">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="浅秋之枫">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/12/09/k8s-feature-gates/" class="post-title-link" itemprop="url">k8s-feature-gates</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2020-12-09 18:59:56 / 修改时间：18:59:46" itemprop="dateCreated datePublished" datetime="2020-12-09T18:59:56+08:00">2020-12-09</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          
       
     </div>
 

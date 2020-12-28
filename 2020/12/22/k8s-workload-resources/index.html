@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="官方文档 DeploymentsDeployments 使用场景 创建部署以推出 ReplicaSet。ReplicaSet 在后台创建 pod。检查 rollout 的状态，看看它是否成功。 通过更新部署的 Pod TemplateSpec 声明 Pods 的新状态。创建一个新的副本集，部署管理将 pod 从旧副本集以可控的速度移动到新副本集。每个新的副本集都会更新部署的修订。 回滚到较早的部署">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-负载-资源">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/22/k8s-workload-resources/index.html">
+<meta property="og:site_name" content="浅秋之枫">
+<meta property="og:description" content="官方文档 DeploymentsDeployments 使用场景 创建部署以推出 ReplicaSet。ReplicaSet 在后台创建 pod。检查 rollout 的状态，看看它是否成功。 通过更新部署的 Pod TemplateSpec 声明 Pods 的新状态。创建一个新的副本集，部署管理将 pod 从旧副本集以可控的速度移动到新副本集。每个新的副本集都会更新部署的修订。 回滚到较早的部署">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-22T09:06:40.000Z">
+<meta property="article:modified_time" content="2020-12-28T06:21:59.790Z">
+<meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="workload">
+<meta property="article:tag" content="resources">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/22/k8s-workload-resources/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>k8s-负载-资源 | 浅秋之枫</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">浅秋之枫</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Deployments"><span class="nav-number">1.</span> <span class="nav-text">Deployments</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Deployments-%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.1.</span> <span class="nav-text">Deployments 使用场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deployment-Spec"><span class="nav-number">1.2.</span> <span class="nav-text">Deployment Spec</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Pod-Template"><span class="nav-number">1.2.1.</span> <span class="nav-text">Pod Template</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Replicas"><span class="nav-number">1.2.2.</span> <span class="nav-text">Replicas</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Selector"><span class="nav-number">1.2.3.</span> <span class="nav-text">Selector</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Strategy"><span class="nav-number">1.2.4.</span> <span class="nav-text">Strategy</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Recreate-Deployment"><span class="nav-number">1.2.5.</span> <span class="nav-text">Recreate Deployment</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ReplicaSet"><span class="nav-number">2.</span> <span class="nav-text">ReplicaSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StatefulSet"><span class="nav-number">3.</span> <span class="nav-text">StatefulSet</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#StatefulSet-%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">3.1.</span> <span class="nav-text">StatefulSet 使用场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DaemonSet"><span class="nav-number">4.</span> <span class="nav-text">DaemonSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Jobs"><span class="nav-number">5.</span> <span class="nav-text">Jobs</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Garbage-Collection"><span class="nav-number">6.</span> <span class="nav-text">Garbage Collection</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TTL-Controller-for-Finished-resources"><span class="nav-number">7.</span> <span class="nav-text">TTL Controller for Finished resources</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CronJob"><span class="nav-number">8.</span> <span class="nav-text">CronJob</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ReplicationController"><span class="nav-number">9.</span> <span class="nav-text">ReplicationController</span></a></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">浅秋之枫</p>
+  <div class="site-description" itemprop="description">随堂笔记</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/22/k8s-workload-resources/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-负载-资源
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-22 17:06:40" itemprop="dateCreated datePublished" datetime="2020-12-22T17:06:40+08:00">2020-12-22</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-28 14:21:59" itemprop="dateModified" datetime="2020-12-28T14:21:59+08:00">2020-12-28</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/">官方文档</a></p>
+<h2 id="Deployments"><a href="#Deployments" class="headerlink" title="Deployments"></a>Deployments</h2><h3 id="Deployments-使用场景"><a href="#Deployments-使用场景" class="headerlink" title="Deployments 使用场景"></a>Deployments 使用场景</h3><ul>
+<li>创建部署以推出 ReplicaSet。ReplicaSet 在后台创建 pod。检查 rollout 的状态，看看它是否成功。</li>
+<li>通过更新部署的 Pod TemplateSpec 声明 Pods 的新状态。创建一个新的副本集，部署管理将 pod 从旧副本集以可控的速度移动到新副本集。每个新的副本集都会更新部署的修订。</li>
+<li>回滚到较早的部署修订。每次回滚都会更新部署的修订。</li>
+<li>扩展部署以促进更多负载。</li>
+<li>暂停部署，将多个补丁应用到它的 PodTemplateSpec，然后恢复它以开始一个新的 rollout。</li>
+<li>使用部署的状态作为一个指示器，表示已经进行了部署。</li>
+<li>清理不再需要的旧副本集。</li>
+</ul>
+<h3 id="Deployment-Spec"><a href="#Deployment-Spec" class="headerlink" title="Deployment Spec"></a>Deployment Spec</h3><p>和其他 k8s 配置一样，部署需要.apiVersion、.kind 和.metadata 字段。部署也需要.spec 部分。</p>
+<h4 id="Pod-Template"><a href="#Pod-Template" class="headerlink" title="Pod Template"></a>Pod Template</h4><p>.spec 必须要有.spec.template 和 .spec.selector 字段。</p>
+<p>.spec.template 是一个 Pod 模板。和 Pod 有相同的结构，除了它是嵌套并且不包含 apiVersion 和 Kind。</p>
+<h4 id="Replicas"><a href="#Replicas" class="headerlink" title="Replicas"></a>Replicas</h4><p>.spec.replicas 是一个可选字段，描述了期望的 Pods 数量，默认为 1。</p>
+<h4 id="Selector"><a href="#Selector" class="headerlink" title="Selector"></a>Selector</h4><p>.spec.selector 是必填字段，描述了被部署追踪的 Pods 的标签选择器。</p>
+<p>.spec.selector 必须和.spec.template.metadata.labels 匹配，否则将会被 API 拒绝。</p>
+<p>在 API 版本 apps/v1 中，如果不设置的话，默认情况下.spec.selector 和.metadata.labels 与.spec.template.metadata.labels 不一致。因此它们必须被直接设置。需要注意的是 在创建 apps/v1 的部署后，.spec.selector 不可变。</p>
+<p>部署会中断那些标签匹配选择器的 Pods，如果这些 Pods 的 template 不匹配.spec.template，或者 Pods 的总数超过了.spec.replicas。</p>
+<p><strong>注意</strong>：您不应该通过创建另一个部署或创建另一个控制器(如 ReplicaSet 或 ReplicationController)直接创建标签与这个选择器匹配的其他 Pods。如果这样做，第一个部署会认为它创建了这些其他的 Pods。k8s 不会阻止你这么做。</p>
+<p>如果存在多个拥有重叠选择器的控制器，那么这些控制器将会相互争斗，并不能正确地运行。</p>
+<h4 id="Strategy"><a href="#Strategy" class="headerlink" title="Strategy"></a>Strategy</h4><p>.spec.strategy 描述了新老 Pods 替换的策略。.spec.strategy.type 可以是“Recreate”、“RollingUpdate”，默认是“RollingUpdate”。</p>
+<h4 id="Recreate-Deployment"><a href="#Recreate-Deployment" class="headerlink" title="Recreate Deployment"></a>Recreate Deployment</h4><p>当.spec.strategy.type==Recreate 时，在新 Pods 创建之前，会 kill 所有已存在的 Pods。</p>
+<p><strong>注意</strong>：这将只保证 Pod 终止之前创建升级。如果升级部署，旧版本的所有 pod 将立即终止。在创建新版本的任何 Pod 之前，将等待成功删除。如果您手动删除一个 Pod，生命周期由 ReplicaSet 控制，替换将立即创建(即使旧的 Pod 仍然处于终止状态)。如果您需要“at most”保证您的 pod，您应该考虑使用 StatefulSet。</p>
+<h2 id="ReplicaSet"><a href="#ReplicaSet" class="headerlink" title="ReplicaSet"></a>ReplicaSet</h2><h2 id="StatefulSet"><a href="#StatefulSet" class="headerlink" title="StatefulSet"></a>StatefulSet</h2><p>StatefulSet 是用来管理有状态应用的负载 API。</p>
+<p>管理部署，缩放 Pods 集，并且提供 Pods 顺序和唯一性保证。</p>
+<p>与部署一样，StatefulSet 管理基于相同容器规范的 Pods。与部署不同，StatefulSet 为每个 pod 维护一个粘性标识。这些 pod 是根据相同的规范创建的，但不能互换:每个 pod 都有一个持久性标识符，它在任何重新调度过程中都要维护这个标识符。</p>
+<p>如果想要使用存储卷给负载提供持久化，你可以使用 StatefulSet 作为一种解决方案。尽管 StatefulSet 中的单个 Pod 容易出现故障，但持久化的 Pod 标识符可以更容易地将现有的卷匹配到替换任何故障的新 Pod。</p>
+<h3 id="StatefulSet-使用场景"><a href="#StatefulSet-使用场景" class="headerlink" title="StatefulSet 使用场景"></a>StatefulSet 使用场景</h3><p>StatefulSets 对于需要以下一种或多种功能的应用程序很有价值。</p>
+<ul>
+<li><p>稳定、唯一的网络标识符。</p>
+</li>
+<li><p>稳定、持久的存储。</p>
+</li>
+<li><p>有序、优雅的部署和扩展。</p>
+</li>
+<li><p>有序、自动滚蛋升级。</p>
+</li>
+</ul>
+<p>在上面的例子中，稳定是跨 Pod (重新)调度的持久性的同义词。如果应用程序不需要任何稳定标识符或有序部署、删除或扩展，则应该使用提供一组无状态副本的工作负载对象来部署应用程序。部署或复制集可能更适合您的无状态需求。</p>
+<h2 id="DaemonSet"><a href="#DaemonSet" class="headerlink" title="DaemonSet"></a>DaemonSet</h2><p>DaemonSet 保证所有（部分）节点运行一个 Pod 副本。一旦节点加入集群，Pods 就会加入这些节点。一旦节点从集群被删除，那些 Pods 也会被垃圾回收。删除 DaemonSet 会清除它创建的 Pods。</p>
+<p>DaemonSet 典型应用：</p>
+<ul>
+<li><p>在每个节点上运行集群存储守护进程</p>
+</li>
+<li><p>在每个节点上运行日志收集守护进程</p>
+</li>
+<li><p>在每个节点上运行节点监控守护进程</p>
+</li>
+</ul>
+<p>在一个简单的例子中，每种守护进程类型都使用一个覆盖所有节点的 DaemonSet。更复杂的设置可能会对单一类型的守护进程使用多个守护进程集，但是对于不同的硬件类型使用不同的标志和（或）不同的内存和 cpu 请求。</p>
+<h2 id="Jobs"><a href="#Jobs" class="headerlink" title="Jobs"></a>Jobs</h2><p>Job 创建一个或多个 Pods，并且确保指定数量的 pod 成功终止。一旦 Pods 成功完成，Job 跟踪成功完成数据。当到底指定成功完成数量，Job 就完成了。删除 Job 会清除它创建的 Pods。</p>
+<p>创建 Job 对象的简单应用场景是为了可靠地运行一个 Pods 到完成。当第一个 Pod 失败或者被删除，Job 对象会创建一个 Pod（例如节点硬件故障或者重启）。</p>
+<h2 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h2><h2 id="TTL-Controller-for-Finished-resources"><a href="#TTL-Controller-for-Finished-resources" class="headerlink" title="TTL Controller for Finished resources"></a>TTL Controller for Finished resources</h2><p>TTL 控制器提供了一种 TTL(生存时间)机制来限制已完成执行的资源对象的生存期。TTL 控制器目前只处理 Job，可以扩展为处理其他将完成执行的资源，如 Pods 和自定义资源。</p>
+<h2 id="CronJob"><a href="#CronJob" class="headerlink" title="CronJob"></a>CronJob</h2><p>CronJob 创建循环调度 Jobs。</p>
+<p>一个 CronJob 对象类似于 crontab (cron 表)文件的一行。它以 Cron 格式编写，按照给定的调度周期运行作业。</p>
+<h2 id="ReplicationController"><a href="#ReplicationController" class="headerlink" title="ReplicationController"></a>ReplicationController</h2><p>ReplicationController 保证在任意时刻运行指定数量的 pod 副本。换句话说，ReplicationController 确保 pod 或一组同质 pod 始终处于可用状态。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/workload/" rel="tag"># workload</a>
+              <a href="/tags/resources/" rel="tag"># resources</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/22/k8s-workload-pod-init-container/" rel="prev" title="k8s-负载-pod-初始容器">
+                  <i class="fa fa-chevron-left"></i> k8s-负载-pod-初始容器
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">浅秋之枫</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>

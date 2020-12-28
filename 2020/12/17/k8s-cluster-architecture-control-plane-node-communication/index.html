@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="本文对控制层(实际上是 apiserver)和 k8s 集群之间的通信路径进行了分类。其目的是允许用户自定义安装来加强网络配置，这样集群就可以运行在一个不可信的网络上(或在一个云提供商上的完全公共的 ip 上)。 节点到控制层k8s 有一个’中心辐射式’API 模式。来自节点(或它们运行的 pod)的所有 API 使用都在 apiserver 终止(其他控制层组件都不用于公开远程服务)。apise">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-集群架构-控制层与节点通信">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/17/k8s-cluster-architecture-control-plane-node-communication/index.html">
+<meta property="og:site_name" content="浅秋之枫">
+<meta property="og:description" content="本文对控制层(实际上是 apiserver)和 k8s 集群之间的通信路径进行了分类。其目的是允许用户自定义安装来加强网络配置，这样集群就可以运行在一个不可信的网络上(或在一个云提供商上的完全公共的 ip 上)。 节点到控制层k8s 有一个’中心辐射式’API 模式。来自节点(或它们运行的 pod)的所有 API 使用都在 apiserver 终止(其他控制层组件都不用于公开远程服务)。apise">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-12-17T05:06:46.000Z">
+<meta property="article:modified_time" content="2020-12-17T05:31:49.327Z">
+<meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="cluster">
+<meta property="article:tag" content="architecture">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-cluster-architecture-control-plane-node-communication/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>k8s-集群架构-控制层与节点通信 | 浅秋之枫</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">浅秋之枫</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E5%88%B0%E6%8E%A7%E5%88%B6%E5%B1%82"><span class="nav-number">1.</span> <span class="nav-text">节点到控制层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E5%B1%82%E5%88%B0%E8%8A%82%E7%82%B9"><span class="nav-number">2.</span> <span class="nav-text">控制层到节点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#apiserver-%E5%88%B0-kubelet"><span class="nav-number">2.1.</span> <span class="nav-text">apiserver 到 kubelet</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#apiserver-%E5%88%B0-nodes%EF%BC%8Cpods-%E5%92%8C-services"><span class="nav-number">2.2.</span> <span class="nav-text">apiserver 到 nodes，pods 和 services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ssh-%E9%9A%A7%E9%81%93"><span class="nav-number">2.3.</span> <span class="nav-text">ssh 隧道</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">浅秋之枫</p>
+  <div class="site-description" itemprop="description">随堂笔记</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-cluster-architecture-control-plane-node-communication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-集群架构-控制层与节点通信
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-17 13:06:46 / 修改时间：13:31:49" itemprop="dateCreated datePublished" datetime="2020-12-17T13:06:46+08:00">2020-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>本文对控制层(实际上是 apiserver)和 k8s 集群之间的通信路径进行了分类。其目的是允许用户自定义安装来加强网络配置，这样集群就可以运行在一个不可信的网络上(或在一个云提供商上的完全公共的 ip 上)。</p>
+<h2 id="节点到控制层"><a href="#节点到控制层" class="headerlink" title="节点到控制层"></a>节点到控制层</h2><p>k8s 有一个’中心辐射式’API 模式。来自节点(或它们运行的 pod)的所有 API 使用都在 apiserver 终止(其他控制层组件都不用于公开远程服务)。apiserver 被配置为侦听安全 HTTPS 端口(通常为 443)上的远程连接，并且启用了一种或多种形式的客户端身份验证。应该启用一种或多种形式的授权，特别是在允许匿名请求或服务帐户令牌的情况下。</p>
+<p>应该为节点提供集群的公共根证书，这样它们就可以使用有效的客户机凭证安全地连接到 apiserver。一种好的方法是，提供给 kubelet 的客户机凭据是以客户机证书的形式提供的。请参阅<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/">kubelet TLS bootstrapping</a>，以自动提供 kubelet 客户端证书。</p>
+<p>希望连接到 apiserver 的 pod 可以通过利用一个服务帐户安全地做到这一点，以便 k8s 在实例化 pod 时自动将公共根证书和有效的无记名令牌注入到 pod 中。k8s 服务(在所有命名空间中)都配置了一个虚拟 IP 地址，该地址被重定向(通过 kube-proxy)到 apiserver 上的 HTTPS 端点。</p>
+<p>控制层组件也通过安全端口与集群 apiserver 通信。</p>
+<p>因此，从节点和节点上运行的 pods 到控制层的连接的默认操作模式在缺省情况下是安全的，并且可以在不可信的以及公共网络上运行。</p>
+<h2 id="控制层到节点"><a href="#控制层到节点" class="headerlink" title="控制层到节点"></a>控制层到节点</h2><p>从控制层(apiserver)到节点有两条主要通信路径。第一个是从 apiserver 到 kubelet 进程，该进程在集群中的每个节点上运行。第二种是通过 apiserver 的代理功能从 apiserver 到任何 node、pod 或 service。</p>
+<h3 id="apiserver-到-kubelet"><a href="#apiserver-到-kubelet" class="headerlink" title="apiserver 到 kubelet"></a>apiserver 到 kubelet</h3><p>从 apiserver 到 kubelet 的连接用于:</p>
+<ul>
+<li>抓取 Pods 日志。</li>
+<li>(通过 kubectl)进入运行 Pods。</li>
+<li>提供 kubelet 的端口转发功能。</li>
+</ul>
+<p>这些连接在 kubelet 的 HTTPS 端点终止。默认情况下，apiserver 不验证 kubelet 的服务证书，这使得连接受到中间人攻击，并且在不受信任的和/或公共网络上运行是不安全的。</p>
+<p>要验证此连接，请使用–kubelet-certificate-authority 标志为 apiserver 提供根证书包，用于验证 kubelet 的服务证书。</p>
+<p>如果这是不可能的，请在需要时使用 apiserver 和 kubelet 之间的 SSH 隧道，以避免通过不可信的或公共的网络进行连接。</p>
+<p>最后，应该启用 Kubelet 身份验证和/或授权来保护 Kubelet API。</p>
+<h3 id="apiserver-到-nodes，pods-和-services"><a href="#apiserver-到-nodes，pods-和-services" class="headerlink" title="apiserver 到 nodes，pods 和 services"></a>apiserver 到 nodes，pods 和 services</h3><p>从 apiserver 到节点、pod 或服 service 的连接默认为纯 HTTP 连接，因此既没有经过身份验证也没有加密。他们可以运行在一个安全的 HTTPS 连接通过加前缀 HTTPS:node,pod,或 service 名称的 API URL,但他们不会验证证书提供的 HTTPS 端点也提供客户端凭证所以当连接将被加密,它不会提供任何担保的完整性。这些连接当前在不受信任和/或公共网络上运行是不安全的。</p>
+<h3 id="ssh-隧道"><a href="#ssh-隧道" class="headerlink" title="ssh 隧道"></a>ssh 隧道</h3><p>k8s 支持 SSH 隧道，以保护控制层到节点的通信路径。在此配置中，apiserver 启动一个 SSH 通道到集群中的每个节点(连接到侦听端口 22 的 SSH 服务器)，并通过通道传递所有以 kubelet、node、pod 或 service 为目的地的流量。这个隧道确保了通信量不会暴露在正在运行的节点所在的网络之外。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/cluster/" rel="tag"># cluster</a>
+              <a href="/tags/architecture/" rel="tag"># architecture</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/14/k8s-cluster-architecture-nodes/" rel="prev" title="k8s-集群架构-节点">
+                  <i class="fa fa-chevron-left"></i> k8s-集群架构-节点
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/17/k8s-cluster-architecture-controller/" rel="next" title="k8s-集群架构-控制器">
+                  k8s-集群架构-控制器 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">浅秋之枫</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>

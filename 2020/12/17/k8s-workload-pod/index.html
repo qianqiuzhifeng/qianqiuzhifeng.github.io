@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"qianqiuzhifeng.github.io","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="Pods 是可以在 k8s 中创建和管理的最小的可部署计算单元。 一个 Pod 是一组一个或多个容器，具有共享的存储&#x2F;网络资源，以及如何运行这些容器的规范。Pod 的内容始终位于同一个位置并共同调度，并在共享上下文中运行。Pod 为特定于应用程序的“逻辑主机”建模:它包含一个或多个相对紧密耦合的应用程序容器。在非云环境中，在相同物理或虚拟机上执行的应用程序类似于在相同逻辑主机上执行的云应用程序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-工作负载-pod">
+<meta property="og:url" content="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod/index.html">
+<meta property="og:site_name" content="浅秋之枫">
+<meta property="og:description" content="Pods 是可以在 k8s 中创建和管理的最小的可部署计算单元。 一个 Pod 是一组一个或多个容器，具有共享的存储&#x2F;网络资源，以及如何运行这些容器的规范。Pod 的内容始终位于同一个位置并共同调度，并在共享上下文中运行。Pod 为特定于应用程序的“逻辑主机”建模:它包含一个或多个相对紧密耦合的应用程序容器。在非云环境中，在相同物理或虚拟机上执行的应用程序类似于在相同逻辑主机上执行的云应用程序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod/pod.svg">
+<meta property="article:published_time" content="2020-12-17T07:36:45.000Z">
+<meta property="article:modified_time" content="2020-12-17T10:26:18.352Z">
+<meta property="article:author" content="浅秋之枫">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="workload">
+<meta property="article:tag" content="pod">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod/pod.svg">
+
+
+<link rel="canonical" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>k8s-工作负载-pod | 浅秋之枫</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">浅秋之枫</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#What-is-a-Pod"><span class="nav-number">1.</span> <span class="nav-text">What is a Pod</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Using-Pods"><span class="nav-number">2.</span> <span class="nav-text">Using Pods</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#How-Pods-manage-multiple-containers"><span class="nav-number">2.1.</span> <span class="nav-text">How Pods manage multiple containers</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Working-with-Pods"><span class="nav-number">3.</span> <span class="nav-text">Working with Pods</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Pods-and-controllers"><span class="nav-number">3.1.</span> <span class="nav-text">Pods and controllers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pod-templates"><span class="nav-number">3.2.</span> <span class="nav-text">Pod templates</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Resource-sharing-and-communication"><span class="nav-number">4.</span> <span class="nav-text">Resource sharing and communication</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Storage-in-Pods"><span class="nav-number">4.1.</span> <span class="nav-text">Storage in Pods</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pod-networking"><span class="nav-number">4.2.</span> <span class="nav-text">Pod networking</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Privileged-mode-for-containers"><span class="nav-number">4.3.</span> <span class="nav-text">Privileged mode for containers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Static-Pods"><span class="nav-number">4.4.</span> <span class="nav-text">Static Pods</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">浅秋之枫</p>
+  <div class="site-description" itemprop="description">随堂笔记</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://qianqiuzhifeng.github.io/2020/12/17/k8s-workload-pod/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="浅秋之枫">
+      <meta itemprop="description" content="随堂笔记">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="浅秋之枫">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-工作负载-pod
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-12-17 15:36:45 / 修改时间：18:26:18" itemprop="dateCreated datePublished" datetime="2020-12-17T15:36:45+08:00">2020-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Pods 是可以在 k8s 中创建和管理的最小的可部署计算单元。</p>
+<p>一个 Pod 是一组一个或多个容器，具有共享的存储/网络资源，以及如何运行这些容器的规范。Pod 的内容始终位于同一个位置并共同调度，并在共享上下文中运行。Pod 为特定于应用程序的“逻辑主机”建模:它包含一个或多个相对紧密耦合的应用程序容器。在非云环境中，在相同物理或虚拟机上执行的应用程序类似于在相同逻辑主机上执行的云应用程序。</p>
+<p>与应用程序容器一样，Pod 可以包含在 Pod 启动期间运行的初始化容器。如果集群提供了这一功能，您还可以注入临时容器进行调试。</p>
+<h2 id="What-is-a-Pod"><a href="#What-is-a-Pod" class="headerlink" title="What is a Pod"></a>What is a Pod</h2><p><strong>注意</strong>：虽然 k8s 支持更多的容器运行时，而不仅仅是 Docker, Docker 是最常见的运行时，它有助于使用 Docker 中的一些术语来描述 pod。</p>
+<p>Pod 的共享上下文是一组 Linux 名称空间、cgroups，可能还有隔离的其他方面—与隔离 Docker 容器相同的内容。在 Pod 的上下文中，单个应用程序可能会应用进一步的子隔离。</p>
+<p>就 Docker 概念而言，Pod 类似于一组具有共享名称空间和共享文件系统卷的 Docker 容器。</p>
+<h2 id="Using-Pods"><a href="#Using-Pods" class="headerlink" title="Using Pods"></a>Using Pods</h2><p>常你不需要直接创建 Pods，甚至是单例的 Pods。相反，使用 Deployment 或 Job 等工作负载资源创建它们。如果您的 Pods 需要跟踪状态，请考虑 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a> 资源。</p>
+<p>k8s 集群中的 pod 主要以两种方式使用:</p>
+<ul>
+<li>运行一个容器的 Pod：“一个容器一个 Pod”的模型是 k8s 最常见的使用案例;在这种情况下，您可以将 Pod 看作是围绕单个容器的包装器;k8s 管理 pod 而不是直接管理容器。</li>
+<li>运行多个需要协同工作的容器的 Pod：一个 Pod 可以封装由多个紧密耦合且需要共享资源的位于同一位置的容器组成的应用程序。这些位于同一位置的容器形成了单一的内聚服务单元。例如，一个容器向公众提供存储在共享卷中的数据，而单独的 sidecar 容器则刷新或更新这些文件。Pod 将这些容器、存储资源和临时网络标识包装为一个单一单元。</li>
+</ul>
+<p><strong>注意</strong>：将多个位于同一位置并共同管理的容器分组到一个 Pod 中是一种相对高级的用例。您应该仅在容器紧密耦合的特定实例中使用此模式。</p>
+<p>每个 Pod 都意味着运行给定应用程序的单个实例。如果您想水平扩展应用程序(通过运行更多实例来提供更多的整体资源)，您应该使用多个 pod，每个实例一个。在 k8s 中，这通常被称为复制。复制的 pod 通常由工作负载资源及其控制器作为一个组创建和管理。</p>
+<p>有关 k8s 如何使用工作负载资源及其控制器来实现应用程序伸缩和自动修复的更多信息，请参见<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/#pods-and-controllers">Pods 和 controllers</a>。</p>
+<h3 id="How-Pods-manage-multiple-containers"><a href="#How-Pods-manage-multiple-containers" class="headerlink" title="How Pods manage multiple containers"></a>How Pods manage multiple containers</h3><p>Pods 被设计用来支持多个协作流程(作为容器)，这些流程形成一个内聚的服务单元。Pod 中的容器在集群中的同一物理或虚拟机上自动地共同定位和调度。容器可以共享资源和依赖关系，相互通信，协调何时以及如何终止它们。</p>
+<p>例如，您可能有一个容器充当共享卷中的文件的 web 服务器，以及一个单独的“sidecar”容器从远程源更新这些文件，如下图所示:</p>
+<img src="/2020/12/17/k8s-workload-pod/pod.svg" class="" title="pod">
+
+<p>一些 Pods 有 init 容器和 app 容器。Init 容器在应用程序容器启动之前运行并完成。</p>
+<p>Pods 在本质上为其组成容器提供了两种共享资源:<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/#pod-networking">网络</a>和<a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/pods/#pod-storage">存储</a>。</p>
+<h2 id="Working-with-Pods"><a href="#Working-with-Pods" class="headerlink" title="Working with Pods"></a>Working with Pods</h2><p>很少会在 k8s 中直接创建单独的 Pod—即使是单例 Pod。这是因为 pod 被设计成相对短暂的一次性实体。当创建一个 Pod(由您直接创建，或由控制器间接创建)时，新的 Pod 将被安排在集群中的一个节点上运行。Pod 将保留在该节点上，直到 Pod 完成执行、删除 Pod 对象、由于缺乏资源而删除 Pod 或节点失败。</p>
+<p><strong>注意</strong>：在一个容器中重新启动一个容器不应该与重新启动一个容器相混淆。Pod 不是一个进程，而是一个运行容器的环境。Pod 一直存在到被删除为止。</p>
+<p>当您为 Pod 对象创建清单时，请确保指定的名称是有效的 DNS 子域名。</p>
+<h3 id="Pods-and-controllers"><a href="#Pods-and-controllers" class="headerlink" title="Pods and controllers"></a>Pods and controllers</h3><p>您可以使用工作负载资源为您创建和管理多个 pod。资源的控制器处理复制和展开式，以及在 Pod 失败时的自动愈合。例如，如果一个节点发生故障，控制器会注意到该节点上的 Pod 已经停止工作，并创建一个替代 Pod。调度程序将替换 Pod 放置到健康节点上。</p>
+<p>下面是一些管理一个或多个 pod 的工作负载资源示例:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployment</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a></li>
+<li><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">DaemonSet</a></li>
+</ul>
+<h3 id="Pod-templates"><a href="#Pod-templates" class="headerlink" title="Pod templates"></a>Pod templates</h3><p>工作负载资源的控制器从 pod 模板创建 pod，并代表您管理这些 pod。</p>
+<p>PodTemplates 是用于创建 pod 的规范，包含在 Deployments、Jobs 和 DaemonSet 等工作负载资源中。</p>
+<p>工作负载资源的每个控制器都使用工作负载对象内部的 PodTemplate 来制作实际的 pod。PodTemplate 是你用来运行应用程序的任何负载资源的期望状态的一部分。</p>
+<p>下面的示例是一个简单作业的清单，该作业使用启动一个容器的模板。该容器中的容器打印一条消息，然后暂停。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">batch/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Job</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="comment"># This is the pod template</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">hello</span></span><br><span class="line">          <span class="attr">image:</span> <span class="string">busybox</span></span><br><span class="line">          <span class="attr">command:</span> [<span class="string">&quot;sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, <span class="string">&#x27;echo &quot;Hello, Kubernetes!&quot; &amp;&amp; sleep 3600&#x27;</span>]</span><br><span class="line">      <span class="attr">restartPolicy:</span> <span class="string">OnFailure</span></span><br><span class="line">    <span class="comment"># The pod template ends here</span></span><br></pre></td></tr></table></figure>
+
+<p>修改 pod 模板或切换到新的 pod 模板对已经存在的 pod 没有直接影响。如果您更改工作负载资源的 pod 模板，该资源需要创建使用更新模板的替换 pod。</p>
+<p>例如，StatefulSet 控制器确保运行的 pod 与每个 StatefulSet 对象的当前 pod 模板匹配。如果您编辑 StatefulSet 以更改它的 pod 模板，StatefulSet 将开始基于更新后的模板创建新的 pod。最后，所有旧的 pod 都被新 pod 替换，更新就完成了。</p>
+<p>每个工作负载资源实现自己的规则来处理对 Pod 模板的更改。如果您想更详细地了解 StatefulSet，请阅读 StatefulSet 基础教程中的更新策略。</p>
+<p>在节点上，kubelet 不直接观察或管理 pod 模板和更新细节;这些细节都被抽象出来了。关注点的抽象和分离简化了系统语义，使扩展集群的行为在不更改现有代码的情况下变得可行。</p>
+<h2 id="Resource-sharing-and-communication"><a href="#Resource-sharing-and-communication" class="headerlink" title="Resource sharing and communication"></a>Resource sharing and communication</h2><p>Pods 支持在其组成容器之间共享和通信数据。</p>
+<h3 id="Storage-in-Pods"><a href="#Storage-in-Pods" class="headerlink" title="Storage in Pods"></a>Storage in Pods</h3><p>Pod 可以指定一组共享存储卷。Pod 中的所有容器都可以访问共享卷，从而允许这些容器共享数据。卷还允许 Pod 中的持久数据在其中一个容器需要重新启动的情况下继续存在。有关 k8s 如何实现共享存储并使其可用于 Pods 的更多信息，请参见 <a target="_blank" rel="noopener" href="https://kubernetes.io/docs/concepts/storage/">Storage</a>。</p>
+<h3 id="Pod-networking"><a href="#Pod-networking" class="headerlink" title="Pod networking"></a>Pod networking</h3><p>为每个 Pod 分配一个地址族中唯一的 IP 地址。Pod 中的每个容器共享网络名称空间，包括 IP 地址和网络端口。在一个 Pod 中(只有这样)，属于 Pod 的容器才能使用本地主机与其他容器进行通信。当 Pod 中的容器与 Pod 外的实体通信时，它们必须协调如何使用共享网络资源(如端口)。在一个 Pod 中，容器共享一个 IP 地址和端口空间，并且可以通过本地主机找到彼此。Pod 中的容器还可以使用标准的进程间通信(如 SystemV 信号量或 POSIX 共享内存)相互通信。不同 Pod 中的容器有不同的 IP 地址，没有特殊的配置就不能通过 IPC 通信。希望与运行在不同 Pod 中的容器交互的容器可以使用 IP 网络进行通信。</p>
+<p>Pod 中的容器将看到系统主机名与配置的 Pod 名相同。在网络部分有更多关于这方面的内容。</p>
+<h3 id="Privileged-mode-for-containers"><a href="#Privileged-mode-for-containers" class="headerlink" title="Privileged mode for containers"></a>Privileged mode for containers</h3><p>Pod 中的任何容器都可以使用容器规范的安全上下文中的 privileged 标志启用特权模式。这对于希望使用操作系统管理功能(如操作网络堆栈或访问硬件设备)的容器非常有用。特权容器内的进程获得的特权几乎与容器外的进程获得的特权相同。</p>
+<p><strong>注意</strong>：容器运行时必须支持特权容器的概念，才能与此设置相关。</p>
+<h3 id="Static-Pods"><a href="#Static-Pods" class="headerlink" title="Static Pods"></a>Static Pods</h3><p>静态 pod 由特定节点上的 kubelet 守护进程直接管理，不需要 API 服务器观察它们。虽然大多数 Pod 是由控制平面管理的(例如，部署)，但是对于静态 Pod, kubelet 直接监督每个静态 Pod(并在它失败时重新启动它)。</p>
+<p>静态 Pods 总是绑定到特定节点上的一个 Kubelet。静态 Pods 的主要用途是运行一个自托管的控制层:换句话说，使用 kubelet 来监督各个控制层组件。</p>
+<p>kubelet 会自动尝试在 k8s API 服务器上为每个静态 Pod 创建一个镜像 Pod。这意味着在一个节点上运行的 Pods 在 API 服务器上是可见的，但不能从那里进行控制。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" rel="tag"># k8s</a>
+              <a href="/tags/workload/" rel="tag"># workload</a>
+              <a href="/tags/pod/" rel="tag"># pod</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/17/k8s-workload-knowledge/" rel="prev" title="k8s-工作负载">
+                  <i class="fa fa-chevron-left"></i> k8s-工作负载
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/17/k8s-workload-pod-lifecycle/" rel="next" title="k8s-工作负载-pod-生命周期">
+                  k8s-工作负载-pod-生命周期 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">浅秋之枫</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+</body>
+</html>
